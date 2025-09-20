@@ -35,6 +35,9 @@ detect_os() {
         . /etc/os-release
         OS=$ID
         VERSION=$VERSION_ID
+    elif [ -f /etc/amazon-linux-release ]; then
+        OS="amzn"
+        VERSION=$(cat /etc/amazon-linux-release | grep -oP '(?<=release )\d+')
     else
         log_error "Cannot detect OS"
         exit 1
@@ -73,17 +76,19 @@ install_docker() {
             sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
             ;;
             
-        centos|rhel|fedora)
+        centos|rhel|fedora|amzn)
             # Install prerequisites
-            sudo yum install -y yum-utils
-            
-            # Add Docker repository
-            sudo yum-config-manager \
-                --add-repo \
-                https://download.docker.com/linux/centos/docker-ce.repo
-            
-            # Install Docker Engine
-            sudo yum install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+            if command -v dnf &> /dev/null; then
+                # Amazon Linux 2023 uses dnf
+                sudo dnf install -y yum-utils
+                sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+                sudo dnf install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+            else
+                # Amazon Linux 2 uses yum
+                sudo yum install -y yum-utils
+                sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+                sudo yum install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+            fi
             ;;
             
         *)
@@ -125,8 +130,12 @@ install_git() {
         ubuntu|debian)
             sudo apt-get install -y git
             ;;
-        centos|rhel|fedora)
-            sudo yum install -y git
+        centos|rhel|fedora|amzn)
+            if command -v dnf &> /dev/null; then
+                sudo dnf install -y git
+            else
+                sudo yum install -y git
+            fi
             ;;
     esac
     
@@ -161,7 +170,7 @@ setup_firewall() {
                 sudo ufw --force enable
             fi
             ;;
-        centos|rhel|fedora)
+        centos|rhel|fedora|amzn)
             if command -v firewall-cmd &> /dev/null; then
                 sudo firewall-cmd --permanent --add-service=ssh
                 sudo firewall-cmd --permanent --add-service=http
@@ -182,8 +191,12 @@ setup_ssl() {
         ubuntu|debian)
             sudo apt-get install -y certbot
             ;;
-        centos|rhel|fedora)
-            sudo yum install -y certbot
+        centos|rhel|fedora|amzn)
+            if command -v dnf &> /dev/null; then
+                sudo dnf install -y certbot
+            else
+                sudo yum install -y certbot
+            fi
             ;;
     esac
     
