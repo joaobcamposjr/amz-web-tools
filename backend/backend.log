@@ -1,0 +1,89 @@
+2025/09/19 19:48:22 ✅ Loaded .env file from parent directory
+2025/09/19 19:48:22 🔧 Config loaded: Oracle Host=10.13.2.159, User=dashjc, Service=nbs
+2025/09/19 19:48:22 Attempting to connect to database: 54.204.42.134:1433/portal
+2025/09/19 19:48:23 Database connected successfully
+2025/09/19 19:48:23 Table 1 created successfully
+2025/09/19 19:48:23 Table 2 created successfully
+2025/09/19 19:48:23 Table 3 created successfully
+2025/09/19 19:48:23 Table 4 created successfully
+2025/09/19 19:48:23 Table 5 created successfully
+2025/09/19 19:48:24 Table 6 created successfully
+2025/09/19 19:48:24 Table 7 created successfully
+2025/09/19 19:48:24 Table 8 created successfully
+2025/09/19 19:48:24 Migration 1 executed successfully
+2025/09/19 19:48:24 Migration 2 executed successfully
+[GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+2025/09/19 19:48:24 🔧 Starting StockService initialization...
+2025/09/19 19:48:24 🔧 Oracle config check: Host=10.13.2.159, User=dashjc, Password=@Joao1225, Service=nbs
+2025/09/19 19:48:24 🔧 Oracle configuration is available, attempting connection...
+2025/09/19 19:48:24 🔧 Oracle DSN: oracle://dashjc:@Joao1225@10.13.2.159:1521/nbs
+2025/09/19 19:48:24 🔗 Connecting to Oracle: 10.13.2.159:1521/nbs
+2025/09/19 19:48:24 🔧 Oracle connection opened, testing ping...
+2025/09/19 19:48:25 ✅ Oracle database connected successfully
+2025/09/19 19:48:25 🔧 StockService created with Oracle connection: true
+2025/09/19 19:48:25 🔧 Iniciando XMLIntegratorService...
+2025/09/19 19:48:26 ✅ Conexão Oracle estabelecida
+2025/09/19 19:49:41 ⚠️ Erro ao ping PostgreSQL: dial tcp 54.204.42.134:5432: connect: operation timed out
+[GIN-debug] POST   /api/v1/auth/login        --> amz-web-tools/backend/internal/handlers.(*Handlers).Login-fm (4 handlers)
+[GIN-debug] POST   /api/v1/auth/register     --> amz-web-tools/backend/internal/handlers.(*Handlers).Register-fm (4 handlers)
+[GIN-debug] GET    /api/v1/test/plate-history --> amz-web-tools/backend/internal/handlers.(*Handlers).GetCarPlateHistory-fm (4 handlers)
+[GIN-debug] GET    /api/v1/test/car-plate/:plate --> amz-web-tools/backend/internal/handlers.(*Handlers).GetCarPlate-fm (4 handlers)
+[GIN-debug] GET    /api/v1/test/depara/tables --> amz-web-tools/backend/internal/handlers.(*Handlers).GetAvailableTables-fm (4 handlers)
+[GIN-debug] GET    /api/v1/test/depara/options --> amz-web-tools/backend/internal/handlers.(*Handlers).GetTableOptions-fm (4 handlers)
+[GIN-debug] POST   /api/v1/test/depara/search --> amz-web-tools/backend/internal/handlers.(*Handlers).SearchDeParaProducts-fm (4 handlers)
+[GIN-debug] POST   /api/v1/test/depara       --> amz-web-tools/backend/internal/handlers.(*Handlers).CreateDeParaProduct-fm (4 handlers)
+[GIN-debug] GET    /api/v1/test/depara/:id   --> amz-web-tools/backend/internal/handlers.(*Handlers).GetDeParaProduct-fm (4 handlers)
+[GIN-debug] PUT    /api/v1/test/depara/:id   --> amz-web-tools/backend/internal/handlers.(*Handlers).UpdateDeParaProduct-fm (4 handlers)
+[GIN-debug] DELETE /api/v1/test/depara/:id   --> amz-web-tools/backend/internal/handlers.(*Handlers).DeleteDeParaProduct-fm (4 handlers)
+[GIN-debug] GET    /api/v1/test/audit/logs   --> amz-web-tools/backend/internal/handlers.(*Handlers).GetAuditLogs-fm (4 handlers)
+[GIN-debug] POST   /api/v1/test/audit/rollback/:audit_id --> amz-web-tools/backend/internal/handlers.(*Handlers).ExecuteRollback-fm (4 handlers)
+[GIN-debug] GET    /api/v1/test/stock        --> amz-web-tools/backend/internal/handlers.(*Handlers).GetStock-fm (4 handlers)
+[GIN-debug] POST   /api/v1/test/stock/search --> amz-web-tools/backend/internal/handlers.(*Handlers).SearchStock-fm (4 handlers)
+[GIN-debug] POST   /api/v1/test/xml-integrator/process --> amz-web-tools/backend/internal/handlers.(*Handlers).ProcessXMLIntegration-fm (4 handlers)
+[GIN-debug] GET    /api/v1/test/xml-integrator/logs/:process_id --> amz-web-tools/backend/internal/handlers.(*Handlers).GetXMLIntegrationLogs-fm (4 handlers)
+[GIN-debug] GET    /api/v1/ws/logs           --> main.main.HandleWebSocket.func9 (4 handlers)
+[GIN-debug] GET    /api/v1/test/ws           --> main.main.func1 (4 handlers)
+[GIN-debug] GET    /api/v1/profile           --> amz-web-tools/backend/internal/handlers.(*Handlers).GetProfile-fm (5 handlers)
+[GIN-debug] PUT    /api/v1/profile           --> amz-web-tools/backend/internal/handlers.(*Handlers).UpdateProfile-fm (5 handlers)
+[GIN-debug] PUT    /api/v1/profile/password  --> amz-web-tools/backend/internal/handlers.(*Handlers).UpdatePassword-fm (5 handlers)
+[GIN-debug] GET    /api/v1/car-plate/:plate  --> amz-web-tools/backend/internal/handlers.(*Handlers).GetCarPlate-fm (5 handlers)
+[GIN-debug] GET    /api/v1/car-plate/history --> amz-web-tools/backend/internal/handlers.(*Handlers).GetCarPlateHistory-fm (5 handlers)
+[GIN-debug] POST   /api/v1/integration/execute --> amz-web-tools/backend/internal/handlers.(*Handlers).ExecuteIntegration-fm (5 handlers)
+[GIN-debug] GET    /api/v1/integration/status/:id --> amz-web-tools/backend/internal/handlers.(*Handlers).GetIntegrationStatus-fm (5 handlers)
+[GIN-debug] POST   /api/v1/import/xml        --> amz-web-tools/backend/internal/handlers.(*Handlers).ImportXML-fm (5 handlers)
+[GIN-debug] GET    /api/v1/import/status/:id --> amz-web-tools/backend/internal/handlers.(*Handlers).GetImportStatus-fm (5 handlers)
+[GIN-debug] POST   /api/v1/xml-integrator/process --> amz-web-tools/backend/internal/handlers.(*Handlers).ProcessXMLIntegration-fm (5 handlers)
+[GIN-debug] GET    /api/v1/xml-integrator/logs/:process_id --> amz-web-tools/backend/internal/handlers.(*Handlers).GetXMLIntegrationLogs-fm (5 handlers)
+[GIN-debug] GET    /api/v1/depara/tables     --> amz-web-tools/backend/internal/handlers.(*Handlers).GetAvailableTables-fm (5 handlers)
+[GIN-debug] POST   /api/v1/depara/search     --> amz-web-tools/backend/internal/handlers.(*Handlers).SearchDeParaProducts-fm (5 handlers)
+[GIN-debug] GET    /api/v1/depara            --> amz-web-tools/backend/internal/handlers.(*Handlers).GetDeParaProducts-fm (5 handlers)
+[GIN-debug] POST   /api/v1/depara            --> amz-web-tools/backend/internal/handlers.(*Handlers).CreateDeParaProduct-fm (5 handlers)
+[GIN-debug] GET    /api/v1/depara/:id        --> amz-web-tools/backend/internal/handlers.(*Handlers).GetDeParaProduct-fm (5 handlers)
+[GIN-debug] PUT    /api/v1/depara/:id        --> amz-web-tools/backend/internal/handlers.(*Handlers).UpdateDeParaProduct-fm (5 handlers)
+[GIN-debug] DELETE /api/v1/depara/:id        --> amz-web-tools/backend/internal/handlers.(*Handlers).DeleteDeParaProduct-fm (5 handlers)
+[GIN-debug] GET    /api/v1/audit/logs        --> amz-web-tools/backend/internal/handlers.(*Handlers).GetAuditLogs-fm (5 handlers)
+[GIN-debug] POST   /api/v1/audit/rollback/:audit_id --> amz-web-tools/backend/internal/handlers.(*Handlers).ExecuteRollback-fm (5 handlers)
+[GIN-debug] GET    /api/v1/stock             --> amz-web-tools/backend/internal/handlers.(*Handlers).GetStock-fm (5 handlers)
+[GIN-debug] POST   /api/v1/stock/search      --> amz-web-tools/backend/internal/handlers.(*Handlers).SearchStock-fm (5 handlers)
+[GIN-debug] POST   /api/v1/auth/first-login  --> amz-web-tools/backend/internal/handlers.(*Handlers).ChangePasswordFirstLogin-fm (5 handlers)
+[GIN-debug] GET    /api/v1/dashboard/stats   --> amz-web-tools/backend/internal/handlers.(*Handlers).GetDashboardStats-fm (5 handlers)
+[GIN-debug] GET    /api/v1/dashboard/test-tables --> amz-web-tools/backend/internal/handlers.(*Handlers).TestDashboardTables-fm (5 handlers)
+[GIN-debug] POST   /api/v1/dashboard/populate-test --> amz-web-tools/backend/internal/handlers.(*Handlers).PopulateTestData-fm (5 handlers)
+[GIN-debug] GET    /api/v1/dashboard/debug-queries --> amz-web-tools/backend/internal/handlers.(*Handlers).DebugQueries-fm (5 handlers)
+[GIN-debug] POST   /api/v1/users             --> amz-web-tools/backend/internal/handlers.(*Handlers).CreateUser-fm (6 handlers)
+[GIN-debug] GET    /api/v1/users             --> amz-web-tools/backend/internal/handlers.(*Handlers).GetAllUsers-fm (6 handlers)
+[GIN-debug] PUT    /api/v1/users             --> amz-web-tools/backend/internal/handlers.(*Handlers).UpdateUser-fm (6 handlers)
+[GIN-debug] POST   /api/v1/users/reset-password --> amz-web-tools/backend/internal/handlers.(*Handlers).ResetUserPassword-fm (6 handlers)
+[GIN-debug] DELETE /api/v1/users/:id         --> amz-web-tools/backend/internal/handlers.(*Handlers).DeleteUser-fm (6 handlers)
+[GIN-debug] GET    /health                   --> main.main.func2 (4 handlers)
+2025/09/19 19:49:41 Server starting on port 8080
+[GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
+Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.
+[GIN-debug] Listening and serving HTTP on :8080
+[GIN-debug] [ERROR] listen tcp :8080: bind: address already in use
+2025/09/19 19:49:41 listen tcp :8080: bind: address already in use
