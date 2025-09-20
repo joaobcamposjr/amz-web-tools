@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # AMZ Web Tools - Server Setup Script
-# This script sets up a fresh Ubuntu/CentOS server for deployment
+# Compatible with Ubuntu, CentOS, RHEL, Fedora, Amazon Linux 2, and Amazon Linux 2023
 
 set -e
 
@@ -37,7 +37,7 @@ detect_os() {
         VERSION=$VERSION_ID
     elif [ -f /etc/amazon-linux-release ]; then
         OS="amzn"
-        VERSION=$(cat /etc/amazon-linux-release | grep -oP '(?<=release )\d+')
+        VERSION=$(cat /etc/amazon-linux-release | grep -oP '(?<=release )\d+' || echo "2")
     else
         log_error "Cannot detect OS"
         exit 1
@@ -91,16 +91,27 @@ install_docker() {
             
         amzn)
             # Amazon Linux specific installation
-            log_info "Installing Docker on Amazon Linux..."
+            log_info "Installing Docker on Amazon Linux $VERSION..."
             
-            if command -v dnf &> /dev/null; then
-                # Amazon Linux 2023 - use Amazon Linux Extras
+            if [ "$VERSION" = "2023" ]; then
+                # Amazon Linux 2023
                 sudo dnf update -y
                 sudo dnf install -y docker
+                
+                # Install Docker Compose separately for Amazon Linux 2023
+                DOCKER_COMPOSE_VERSION=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep 'tag_name' | cut -d\" -f4)
+                sudo curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+                sudo chmod +x /usr/local/bin/docker-compose
+                
             else
-                # Amazon Linux 2 - use Amazon Linux Extras
+                # Amazon Linux 2
                 sudo yum update -y
                 sudo amazon-linux-extras install -y docker
+                
+                # Install Docker Compose for Amazon Linux 2
+                DOCKER_COMPOSE_VERSION=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep 'tag_name' | cut -d\" -f4)
+                sudo curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+                sudo chmod +x /usr/local/bin/docker-compose
             fi
             ;;
             
@@ -121,8 +132,13 @@ install_docker() {
     log_warning "Please logout and login again for Docker group changes to take effect"
 }
 
-# Install Docker Compose (standalone)
+# Install Docker Compose (standalone) - only for non-Amazon Linux
 install_docker_compose() {
+    if [ "$OS" = "amzn" ]; then
+        log_info "Docker Compose already installed for Amazon Linux"
+        return
+    fi
+    
     log_info "Installing Docker Compose..."
     
     # Download latest version
@@ -143,8 +159,11 @@ install_git() {
         ubuntu|debian)
             sudo apt-get install -y git
             ;;
-        centos|rhel|fedora|amzn)
-            if command -v dnf &> /dev/null; then
+        centos|rhel|fedora)
+            sudo yum install -y git
+            ;;
+        amzn)
+            if [ "$VERSION" = "2023" ]; then
                 sudo dnf install -y git
             else
                 sudo yum install -y git
@@ -166,8 +185,23 @@ setup_app_directory() {
         sudo chown $USER:$USER $APP_DIR
     fi
     
+    # Create Oracle Instant Client directory
+    ORACLE_DIR="/opt/oracle/instantclient_21_13"
+    if [ ! -d "$ORACLE_DIR" ]; then
+        sudo mkdir -p $ORACLE_DIR
+        sudo chown $USER:$USER $ORACLE_DIR
+    fi
+    
+    # Create SSL certificates directory
+    CERTS_DIR="$APP_DIR/certs"
+    if [ ! -d "$CERTS_DIR" ]; then
+        sudo mkdir -p $CERTS_DIR
+        sudo chown $USER:$USER $CERTS_DIR
+    fi
+    
     log_success "Application directory created: $APP_DIR"
-    log_info "Upload your application files to: $APP_DIR"
+    log_success "Oracle directory created: $ORACLE_DIR"
+    log_success "SSL certificates directory created: $CERTS_DIR"
 }
 
 # Setup firewall
@@ -196,6 +230,22 @@ setup_firewall() {
     log_success "Firewall configured"
 }
 
+# Download Oracle Instant Client
+download_oracle_client() {
+    log_info "Setting up Oracle Instant Client..."
+    
+    ORACLE_DIR="/opt/oracle/instantclient_21_13"
+    
+    log_info "Oracle Instant Client directory: $ORACLE_DIR"
+    log_info "Please download Oracle Instant Client manually:"
+    log_info "1. Go to: https://www.oracle.com/database/technologies/instant-client/linux-x86-64-downloads.html"
+    log_info "2. Download 'Instant Client Basic Package' and 'Instant Client SDK Package'"
+    log_info "3. Extract to: $ORACLE_DIR"
+    log_info "4. Set proper permissions: sudo chown -R $USER:$USER $ORACLE_DIR"
+    
+    log_warning "Oracle Instant Client must be downloaded manually due to Oracle license requirements"
+}
+
 # Setup SSL certificates (Let's Encrypt)
 setup_ssl() {
     log_info "Setting up SSL certificates with Let's Encrypt..."
@@ -204,8 +254,11 @@ setup_ssl() {
         ubuntu|debian)
             sudo apt-get install -y certbot
             ;;
-        centos|rhel|fedora|amzn)
-            if command -v dnf &> /dev/null; then
+        centos|rhel|fedora)
+            sudo yum install -y certbot
+            ;;
+        amzn)
+            if [ "$VERSION" = "2023" ]; then
                 sudo dnf install -y certbot
             else
                 sudo yum install -y certbot
@@ -215,7 +268,7 @@ setup_ssl() {
     
     log_info "To obtain SSL certificates, run:"
     log_info "sudo certbot certonly --standalone -d yourdomain.com"
-    log_info "Then copy certificates to: /opt/amz-web-tools/nginx/ssl/"
+    log_info "Then copy certificates to: $APP_DIR/certs/"
 }
 
 # Main setup function
@@ -228,15 +281,17 @@ main() {
     install_git
     setup_app_directory
     setup_firewall
+    download_oracle_client
     setup_ssl
     
     log_success "Server setup completed successfully!"
     echo ""
     log_info "Next steps:"
-    log_info "1. Upload your application files to /opt/amz-web-tools/"
-    log_info "2. Configure environment variables in env.production"
-    log_info "3. Download Oracle Instant Client"
-    log_info "4. Run: ./deploy.sh start"
+    log_info "1. Download Oracle Instant Client to /opt/oracle/instantclient_21_13/"
+    log_info "2. Upload your application files to /opt/amz-web-tools/"
+    log_info "3. Configure environment variables in .env file"
+    log_info "4. Configure SSL certificates (optional)"
+    log_info "5. Run: ./deploy.sh start"
     echo ""
     log_warning "Don't forget to logout and login again for Docker group changes!"
 }
