@@ -76,18 +76,31 @@ install_docker() {
             sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
             ;;
             
-        centos|rhel|fedora|amzn)
+        centos|rhel|fedora)
             # Install prerequisites
+            sudo yum install -y yum-utils
+            
+            # Add Docker repository
+            sudo yum-config-manager \
+                --add-repo \
+                https://download.docker.com/linux/centos/docker-ce.repo
+            
+            # Install Docker Engine
+            sudo yum install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+            ;;
+            
+        amzn)
+            # Amazon Linux specific installation
+            log_info "Installing Docker on Amazon Linux..."
+            
             if command -v dnf &> /dev/null; then
-                # Amazon Linux 2023 uses dnf
-                sudo dnf install -y yum-utils
-                sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-                sudo dnf install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+                # Amazon Linux 2023 - use Amazon Linux Extras
+                sudo dnf update -y
+                sudo dnf install -y docker
             else
-                # Amazon Linux 2 uses yum
-                sudo yum install -y yum-utils
-                sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-                sudo yum install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+                # Amazon Linux 2 - use Amazon Linux Extras
+                sudo yum update -y
+                sudo amazon-linux-extras install -y docker
             fi
             ;;
             
