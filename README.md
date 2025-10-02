@@ -89,10 +89,10 @@ O sistema criará automaticamente as seguintes tabelas:
 
 ```env
 # Database
-DB_HOST=54.204.42.134
+DB_HOST=your-database-host
 DB_PORT=1433
-DB_USER=sa
-DB_PASSWORD=321@Mudar@7089341@
+DB_USER=your-db-user
+DB_PASSWORD=your-secure-password
 DB_NAME=portal
 
 # Server

@@ -55,13 +55,13 @@ chmod +x deploy.sh
 
 ### Arquivo `.env`
 ```bash
-# Banco de dados (já configurado)
-DB_HOST=54.204.42.134
-DB_PASSWORD=321@Mudar@7089341@
+# Banco de dados (configure com seus dados)
+DB_HOST=your-database-host
+DB_PASSWORD=your-secure-password
 
-# Oracle (já configurado)
-ORACLE_HOST=10.13.2.159
-ORACLE_PASSWORD=@Joao1225
+# Oracle (configure com seus dados)
+ORACLE_HOST=your-oracle-host
+ORACLE_PASSWORD=your-oracle-password
 
 # JWT (GERAR NOVA CHAVE!)
 JWT_SECRET=sua_chave_secreta_super_forte_aqui
@@ -117,4 +117,9 @@ docker-compose -f docker-compose.prod.yml down -v
 ---
 
 **🎉 Pronto! Sua aplicação está rodando em produção!**
+
+
+
+
+
 

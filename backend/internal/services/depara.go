@@ -508,3 +508,9 @@ func (s *DeParaService) buildTableName(tableConfig string) string {
 	return "integration.amazonas_psa.mercadolivre_base"
 }
 
+
+
+
+
+
+
