@@ -120,46 +120,24 @@ func (s *DeParaService) hasColumn(tableName, columnName string) (bool, error) {
 	log.Printf("🔍 Checking column %s in table %s (schema: %s, table_schema: %s, table_name: %s)",
 		columnName, tableName, schemaName, tableSchema, actualTableName)
 
-	// Try different approaches to find the column
-	queries := []struct {
-		query string
-		args  []interface{}
-		desc  string
-	}{
-		// Try with the middle part as schema (most likely to work)
-		{
-			`SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @p1 AND TABLE_NAME = @p2 AND COLUMN_NAME = @p3`,
-			[]interface{}{tableSchema, actualTableName, columnName},
-			"schema as " + tableSchema + ", table as " + actualTableName,
-		},
-		// Try with just the table name
-		{
-			`SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @p1 AND TABLE_NAME = @p2 AND COLUMN_NAME = @p3`,
-			[]interface{}{schemaName, actualTableName, columnName},
-			"schema as " + schemaName + ", table as " + actualTableName,
-		},
-		// Try with full table name as table name
-		{
-			`SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @p1 AND TABLE_NAME = @p2 AND COLUMN_NAME = @p3`,
-			[]interface{}{schemaName, tableSchema + "." + actualTableName, columnName},
-			"schema as " + schemaName + ", table as " + tableSchema + "." + actualTableName,
-		},
+	// Use the working query format that we confirmed works with sqlcmd
+	// Query 1: schema=amazonas_renault, table=mercadolivre_base (this one worked!)
+	query := `SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @p1 AND TABLE_NAME = @p2 AND COLUMN_NAME = @p3`
+	args := []interface{}{tableSchema, actualTableName, columnName}
+	
+	var count int
+	err := s.db.QueryRow(query, args...).Scan(&count)
+	if err != nil {
+		log.Printf("⚠️ Query failed for column %s: %v", columnName, err)
+		return false, err
 	}
-
-	for i, q := range queries {
-		var count int
-		err := s.db.QueryRow(q.query, q.args...).Scan(&count)
-		if err != nil {
-			log.Printf("⚠️ Query %d failed for column %s (%s): %v", i+1, columnName, q.desc, err)
-			continue
-		}
-		if count > 0 {
-			log.Printf("✅ Column %s found with query %d (%s)", columnName, i+1, q.desc)
-			return true, nil
-		}
+	
+	if count > 0 {
+		log.Printf("✅ Column %s found (count=%d)", columnName, count)
+		return true, nil
 	}
-
-	log.Printf("❌ Column %s not found in any schema", columnName)
+	
+	log.Printf("❌ Column %s not found (count=%d)", columnName, count)
 	return false, nil
 }
 
