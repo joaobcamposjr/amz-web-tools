@@ -132,6 +132,7 @@ func (h *Handlers) GetDeParaProduct(c *gin.Context) {
 	})
 }
 
+
 // CreateDeParaProduct creates a new product
 func (h *Handlers) CreateDeParaProduct(c *gin.Context) {
 	var req models.CreateDeParaRequest
@@ -350,3 +351,5 @@ func (h *Handlers) GetDeParaProducts(c *gin.Context) {
 		},
 	})
 }
+
+

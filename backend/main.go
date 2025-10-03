@@ -77,6 +77,7 @@ func main() {
 		public.GET("/test/depara/:id", h.GetDeParaProduct)
 		public.PUT("/test/depara/:id", h.UpdateDeParaProduct)
 		public.DELETE("/test/depara/:id", h.DeleteDeParaProduct)
+		public.GET("/test/depara/debug/columns", h.DebugColumnDetection)
 
 		// Test audit routes
 		public.GET("/test/audit/logs", h.GetAuditLogs)
