@@ -12,10 +12,17 @@ interface DeParaProduct {
   sku: string;
   company: string;
   permalink: string;
+  price: any; // Pode ser number, null, ou objeto sql.NullFloat64
+  sold_quantity: any; // Pode ser number, null, ou objeto sql.NullInt32
+  tags: string | null;
+  status: string | null;
+  health: any; // Pode ser number, null, ou objeto sql.NullFloat64
   ship_cost_slow: number;
   ship_cost_standard: number;
   ship_cost_nextday: number;
   pictures: string[];
+  created_at_site: string | null;
+  updated_at_site: string | null;
   updated_at: string;
   created_at: string;
 }
@@ -33,6 +40,19 @@ interface TableOptions {
   conta: string[];
   marketplace: string[];
 }
+
+// Função auxiliar simples para extrair valores
+const getValue = (value: any): any => {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'object' && value.Valid !== undefined) {
+    if (value.Valid) {
+      // Handle different sql.Null* types
+      return value.Float64 || value.Int32 || value.Int64 || value.String || value.Time || value;
+    }
+    return null;
+  }
+  return value;
+};
 
 export default function DeParaPage() {
   const [tables, setTables] = useState<IntegrationTable[]>([]);
@@ -724,12 +744,172 @@ export default function DeParaPage() {
                 {/* Permalink - Ocupa 2 colunas para não cortar */}
                 <div className="md:col-span-2 lg:col-span-3">
                   <label className="block text-sm font-medium text-gray-700 mb-1">URL do Anúncio</label>
+                  {selectedProduct.permalink ? (
+                    <div className="flex">
+                      <input
+                        type="text"
+                        value={selectedProduct.permalink}
+                        disabled
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md bg-gray-50 text-sm"
+                      />
+                      <a
+                        href={selectedProduct.permalink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700 transition-colors text-sm"
+                      >
+                        Abrir
+                      </a>
+                    </div>
+                  ) : (
+                    <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm text-gray-500">
+                      URL não disponível
+                    </div>
+                  )}
+                </div>
+                
+                {/* Novas Colunas - Grid de 2 colunas */}
+                <div className="md:col-span-2 lg:col-span-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Preço</label>
                   <input
                     type="text"
-                    value={selectedProduct.permalink}
+                    value={(() => {
+                      const price = getValue(selectedProduct.price);
+                      if (price && typeof price === 'number') {
+                        return `R$ ${price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+                      }
+                      return 'N/A';
+                    })()}
                     disabled
                     className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Quantidade Vendida</label>
+                  <input
+                    type="text"
+                    value={(() => {
+                      const quantity = getValue(selectedProduct.sold_quantity);
+                      
+                      // Se for 0, mostra 0 (não N/A)
+                      if (quantity === 0) {
+                        return '0';
+                      }
+                      
+                      // Se for um número válido (incluindo 0), formata
+                      if (typeof quantity === 'number' && !isNaN(quantity)) {
+                        return quantity.toLocaleString('pt-BR');
+                      }
+                      
+                      // Só mostra N/A se realmente não houver dados
+                      return 'N/A';
+                    })()}
+                    disabled
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <input
+                    type="text"
+                    value={getValue(selectedProduct.status) || 'N/A'}
+                    disabled
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Health</label>
+                  <input
+                    type="text"
+                    value={(() => {
+                      const health = getValue(selectedProduct.health);
+                      if (health && typeof health === 'number') {
+                        return `${(health * 100).toFixed(1)}%`;
+                      }
+                      return 'N/A';
+                    })()}
+                    disabled
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm"
+                  />
+                </div>
+                  </div>
+                </div>
+                
+                {/* Tags - Ocupa toda a largura */}
+                {(() => {
+                  const tagsValue = getValue(selectedProduct.tags);
+                  if (tagsValue && typeof tagsValue === 'string' && tagsValue.trim()) {
+                    return (
+                      <div className="md:col-span-2 lg:col-span-3">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
+                        <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm">
+                          {tagsValue.split(',').filter(tag => tag.trim()).map((tag, index) => (
+                            <span
+                              key={index}
+                              className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full mr-2 mb-1"
+                            >
+                              {tag.trim()}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+                
+                {/* Datas do Site - Grid de 2 colunas */}
+                <div className="md:col-span-2 lg:col-span-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Criado no Site</label>
+                  <input
+                    type="text"
+                    value={(() => {
+                      const dateValue = getValue(selectedProduct.created_at_site);
+                      if (!dateValue) return 'N/A';
+                      try {
+                        // Se for um objeto com Time, usa a propriedade Time
+                        if (typeof dateValue === 'object' && dateValue.Time) {
+                          return new Date(dateValue.Time).toLocaleString('pt-BR');
+                        }
+                        // Se for uma string, usa diretamente
+                        return new Date(dateValue).toLocaleString('pt-BR');
+                      } catch (error) {
+                        console.log('Error parsing created_at_site:', error, 'Value:', dateValue);
+                        return 'Data inválida';
+                      }
+                    })()}
+                    disabled
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Atualizado no Site</label>
+                  <input
+                    type="text"
+                    value={(() => {
+                      const dateValue = getValue(selectedProduct.updated_at_site);
+                      if (!dateValue) return 'N/A';
+                      try {
+                        // Se for um objeto com Time, usa a propriedade Time
+                        if (typeof dateValue === 'object' && dateValue.Time) {
+                          return new Date(dateValue.Time).toLocaleString('pt-BR');
+                        }
+                        // Se for uma string, usa diretamente
+                        return new Date(dateValue).toLocaleString('pt-BR');
+                      } catch (error) {
+                        console.log('Error parsing updated_at_site:', error, 'Value:', dateValue);
+                        return 'Data inválida';
+                      }
+                    })()}
+                    disabled
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm"
+                  />
+                </div>
+                  </div>
                 </div>
                 
                 {/* Frete - Grid de 3 colunas */}
@@ -810,6 +990,7 @@ export default function DeParaPage() {
     </div>
   );
 }
+
 
 
 

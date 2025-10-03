@@ -53,13 +53,17 @@ func (s *CarPlateService) GetCarPlate(plate string, userID string) (*PlateResult
 	// First, check cache
 	cachedData, err := s.getFromCache(plate)
 	if err == nil && cachedData != nil {
-		log.Printf("✅ Plate %s found in cache", plate)
+		log.Printf("🚀 Plate %s found in cache - returning cached data", plate)
 		// Save to history even if from cache
 		s.saveToHistory(plate, cachedData, "success", "", userID)
 		return &PlateResult{Data: cachedData, Source: "cache"}, nil
 	}
 
-	log.Printf("❌ Plate %s not in cache, fetching from API", plate)
+	if err != nil {
+		log.Printf("⚠️ Error checking cache for plate %s: %v", plate, err)
+	} else {
+		log.Printf("🔍 Plate %s not found in cache, fetching from API", plate)
+	}
 
 	// If not in cache, fetch from API
 	apiData, err := s.fetchFromAPI(plate)
@@ -84,6 +88,44 @@ func (s *CarPlateService) GetCarPlate(plate string, userID string) (*PlateResult
 	s.saveToHistory(plate, apiData, "success", "", userID)
 
 	return &PlateResult{Data: apiData, Source: "api"}, nil
+}
+
+// GetCacheStats returns cache statistics
+func (s *CarPlateService) GetCacheStats() (map[string]interface{}, error) {
+	stats := make(map[string]interface{})
+
+	// Total cache entries
+	var totalCount int
+	err := s.db.QueryRow("SELECT COUNT(*) FROM plate_cache").Scan(&totalCount)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get total count: %w", err)
+	}
+	stats["total_entries"] = totalCount
+
+	// Valid cache entries
+	var validCount int
+	err = s.db.QueryRow("SELECT COUNT(*) FROM plate_cache WHERE expires_at > GETDATE()").Scan(&validCount)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get valid count: %w", err)
+	}
+	stats["valid_entries"] = validCount
+
+	// Expired cache entries
+	var expiredCount int
+	err = s.db.QueryRow("SELECT COUNT(*) FROM plate_cache WHERE expires_at <= GETDATE()").Scan(&expiredCount)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get expired count: %w", err)
+	}
+	stats["expired_entries"] = expiredCount
+
+	// Cache hit rate (approximate)
+	if totalCount > 0 {
+		stats["cache_hit_rate"] = float64(validCount) / float64(totalCount) * 100
+	} else {
+		stats["cache_hit_rate"] = 0.0
+	}
+
+	return stats, nil
 }
 
 // getFromCache retrieves plate data from database cache
@@ -166,8 +208,8 @@ func (s *CarPlateService) saveToCache(plate string, data *PlateAPIResponse) erro
 		return fmt.Errorf("failed to marshal data: %w", err)
 	}
 
-	// Cache for 24 hours
-	expiresAt := time.Now().Add(24 * time.Hour)
+	// Cache for 7 days (168 hours) to reduce API calls
+	expiresAt := time.Now().Add(7 * 24 * time.Hour)
 
 	query := `
 		MERGE plate_cache AS target
@@ -183,6 +225,7 @@ func (s *CarPlateService) saveToCache(plate string, data *PlateAPIResponse) erro
 		return fmt.Errorf("failed to save to cache: %w", err)
 	}
 
+	log.Printf("✅ Plate %s cached until %s", plate, expiresAt.Format("2006-01-02 15:04:05"))
 	return nil
 }
 

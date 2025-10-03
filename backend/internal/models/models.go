@@ -99,10 +99,17 @@ type DeParaProduct struct {
 	SKU              string          `json:"sku" db:"sku"`
 	Company          string          `json:"company" db:"company"`
 	Permalink        string          `json:"permalink" db:"permalink"`
+	Price            sql.NullFloat64 `json:"price" db:"price"`
+	SoldQuantity     sql.NullInt32   `json:"sold_quantity" db:"sold_quantity"`
+	Tags             sql.NullString  `json:"tags" db:"tags"`
+	Status           sql.NullString  `json:"status" db:"status"`
+	Health           sql.NullFloat64 `json:"health" db:"health"`
 	ShipCostSlow     sql.NullFloat64 `json:"ship_cost_slow" db:"ship_cost_slow"`
 	ShipCostStandard sql.NullFloat64 `json:"ship_cost_standard" db:"ship_cost_standard"`
 	ShipCostNextday  sql.NullFloat64 `json:"ship_cost_nextday" db:"ship_cost_nextday"`
 	Pictures         []string        `json:"pictures" db:"pictures"`
+	CreatedAtSite    sql.NullTime    `json:"created_at_site" db:"created_at_site"`
+	UpdatedAtSite    sql.NullTime    `json:"updated_at_site" db:"updated_at_site"`
 	UpdatedAt        time.Time       `json:"updated_at" db:"updated_at"`
 	CreatedAt        time.Time       `json:"created_at" db:"created_at"`
 }

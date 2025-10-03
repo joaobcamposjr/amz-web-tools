@@ -106,29 +106,54 @@ func (s *DeParaService) GetTableOptions() (map[string][]string, error) {
 
 // hasColumn checks if a column exists in the specified table
 func (s *DeParaService) hasColumn(tableName, columnName string) (bool, error) {
-	// Extract table name from full table name (e.g., "integration.amazonas_psa.mercadolivre_base" -> "amazonas_psa.mercadolivre_base")
+	// Extract schema and table name from full table name (e.g., "integration.amazonas_jeep.mercadolivre_base")
 	parts := strings.Split(tableName, ".")
-	if len(parts) < 2 {
+	if len(parts) < 3 {
 		return false, fmt.Errorf("invalid table name format: %s", tableName)
 	}
 
-	// Get the table name part (e.g., "amazonas_psa.mercadolivre_base")
-	tablePart := strings.Join(parts[1:], ".")
+	// Get the schema and table parts
+	schemaName := parts[0]      // integration
+	tableSchema := parts[1]     // amazonas_jeep
+	actualTableName := parts[2] // mercadolivre_base
 
-	query := `
-		SELECT COUNT(*) 
-		FROM INFORMATION_SCHEMA.COLUMNS 
-		WHERE TABLE_SCHEMA = 'integration' 
-		AND TABLE_NAME = @p1 
-		AND COLUMN_NAME = @p2`
-
-	var count int
-	err := s.db.QueryRow(query, tablePart, columnName).Scan(&count)
-	if err != nil {
-		return false, err
+	// Try different approaches to find the column
+	queries := []struct {
+		query string
+		args  []interface{}
+	}{
+		// Try with full schema path
+		{
+			`SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @p1 AND TABLE_NAME = @p2 AND COLUMN_NAME = @p3`,
+			[]interface{}{schemaName, tableSchema + "." + actualTableName, columnName},
+		},
+		// Try with just the table name
+		{
+			`SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @p1 AND TABLE_NAME = @p2 AND COLUMN_NAME = @p3`,
+			[]interface{}{schemaName, actualTableName, columnName},
+		},
+		// Try with the middle part as schema
+		{
+			`SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @p1 AND TABLE_NAME = @p2 AND COLUMN_NAME = @p3`,
+			[]interface{}{tableSchema, actualTableName, columnName},
+		},
 	}
 
-	return count > 0, nil
+	for i, q := range queries {
+		var count int
+		err := s.db.QueryRow(q.query, q.args...).Scan(&count)
+		if err != nil {
+			log.Printf("⚠️ Query %d failed for column %s: %v", i+1, columnName, err)
+			continue
+		}
+		if count > 0 {
+			log.Printf("✅ Column %s found with query %d", columnName, i+1)
+			return true, nil
+		}
+	}
+
+	log.Printf("❌ Column %s not found in any schema", columnName)
+	return false, nil
 }
 
 // SearchProducts searches products based on criteria with pagination
@@ -186,13 +211,107 @@ func (s *DeParaService) SearchProducts(tableName, query, searchBy string, page, 
 		hasPermalink = false
 	}
 
+	// Check for new columns
+	hasPrice, err := s.hasColumn(actualTableName, "price")
+	if err != nil {
+		log.Printf("⚠️ Warning: Could not check for price column: %v", err)
+		hasPrice = false
+	}
+	hasSoldQuantity, err := s.hasColumn(actualTableName, "sold_quantity")
+	if err != nil {
+		log.Printf("⚠️ Warning: Could not check for sold_quantity column: %v", err)
+		hasSoldQuantity = false
+	}
+	hasTags, err := s.hasColumn(actualTableName, "tags")
+	if err != nil {
+		log.Printf("⚠️ Warning: Could not check for tags column: %v", err)
+		hasTags = false
+	}
+	hasStatus, err := s.hasColumn(actualTableName, "status")
+	if err != nil {
+		log.Printf("⚠️ Warning: Could not check for status column: %v", err)
+		hasStatus = false
+	}
+	hasHealth, err := s.hasColumn(actualTableName, "health")
+	if err != nil {
+		log.Printf("⚠️ Warning: Could not check for health column: %v", err)
+		hasHealth = false
+	}
+	hasCreatedAtSite, err := s.hasColumn(actualTableName, "created_at_site")
+	if err != nil {
+		log.Printf("⚠️ Warning: Could not check for created_at_site column: %v", err)
+		hasCreatedAtSite = false
+	}
+	hasUpdatedAtSite, err := s.hasColumn(actualTableName, "updated_at_site")
+	if err != nil {
+		log.Printf("⚠️ Warning: Could not check for updated_at_site column: %v", err)
+		hasUpdatedAtSite = false
+	}
+
 	// Build query based on available columns with NULL handling
 	var selectColumns string
+	baseColumns := "id, COALESCE(mlbu, '') as mlbu, COALESCE(type, '') as type, COALESCE(sku, '') as sku, COALESCE(company, '') as company"
+
+	// Add permalink
 	if hasPermalink {
-		selectColumns = "id, COALESCE(mlbu, '') as mlbu, COALESCE(type, '') as type, COALESCE(sku, '') as sku, COALESCE(company, '') as company, COALESCE(permalink, '') as permalink, ship_cost_slow, ship_cost_standard, ship_cost_nextday, COALESCE(pictures, '') as pictures, updated_at, created_at"
+		selectColumns = baseColumns + ", COALESCE(permalink, '') as permalink"
 	} else {
-		selectColumns = "id, COALESCE(mlbu, '') as mlbu, COALESCE(type, '') as type, COALESCE(sku, '') as sku, COALESCE(company, '') as company, '' as permalink, ship_cost_slow, ship_cost_standard, ship_cost_nextday, COALESCE(pictures, '') as pictures, updated_at, created_at"
+		selectColumns = baseColumns + ", '' as permalink"
 	}
+
+	// Add new columns if they exist
+	if hasPrice {
+		selectColumns += ", price"
+	} else {
+		selectColumns += ", NULL as price"
+	}
+
+	if hasSoldQuantity {
+		selectColumns += ", sold_quantity"
+	} else {
+		selectColumns += ", NULL as sold_quantity"
+	}
+
+	if hasTags {
+		selectColumns += ", COALESCE(tags, '') as tags"
+	} else {
+		selectColumns += ", '' as tags"
+	}
+
+	if hasStatus {
+		selectColumns += ", COALESCE(status, '') as status"
+	} else {
+		selectColumns += ", '' as status"
+	}
+
+	if hasHealth {
+		selectColumns += ", health"
+	} else {
+		selectColumns += ", NULL as health"
+	}
+
+	// Add shipping costs
+	selectColumns += ", ship_cost_slow, ship_cost_standard, ship_cost_nextday, COALESCE(pictures, '') as pictures"
+
+	// Add site timestamps if they exist
+	if hasCreatedAtSite {
+		selectColumns += ", created_at_site"
+	} else {
+		selectColumns += ", NULL as created_at_site"
+	}
+
+	if hasUpdatedAtSite {
+		selectColumns += ", updated_at_site"
+	} else {
+		selectColumns += ", NULL as updated_at_site"
+	}
+
+	// Add system timestamps
+	selectColumns += ", updated_at, created_at"
+
+	// Debug log
+	log.Printf("🔍 Column detection for %s: price=%v, sold_quantity=%v, tags=%v, status=%v, health=%v, created_at_site=%v, updated_at_site=%v",
+		actualTableName, hasPrice, hasSoldQuantity, hasTags, hasStatus, hasHealth, hasCreatedAtSite, hasUpdatedAtSite)
 
 	// First get all results for total count
 	allResultsQuery := fmt.Sprintf(`
@@ -215,11 +334,14 @@ func (s *DeParaService) SearchProducts(tableName, query, searchBy string, page, 
 	for rows.Next() {
 		var product models.DeParaProduct
 		var picturesJSON string
+		var createdAtSite, updatedAtSite sql.NullTime
 
 		err := rows.Scan(
 			&product.ID, &product.MLBU, &product.Type, &product.SKU, &product.Company,
-			&product.Permalink, &product.ShipCostSlow, &product.ShipCostStandard,
-			&product.ShipCostNextday, &picturesJSON, &product.UpdatedAt, &product.CreatedAt,
+			&product.Permalink, &product.Price, &product.SoldQuantity, &product.Tags,
+			&product.Status, &product.Health, &product.ShipCostSlow, &product.ShipCostStandard,
+			&product.ShipCostNextday, &picturesJSON, &createdAtSite, &updatedAtSite,
+			&product.UpdatedAt, &product.CreatedAt,
 		)
 		if err != nil {
 			return nil, 0, fmt.Errorf("failed to scan product: %w", err)
@@ -240,6 +362,20 @@ func (s *DeParaService) SearchProducts(tableName, query, searchBy string, page, 
 			}
 		} else {
 			product.Pictures = []string{}
+		}
+
+		// Set site timestamps
+		if createdAtSite.Valid {
+			product.CreatedAtSite = createdAtSite
+		}
+		if updatedAtSite.Valid {
+			product.UpdatedAtSite = updatedAtSite
+		}
+
+		// Debug log for first product
+		if len(allProducts) == 0 {
+			log.Printf("🔍 First product data: ID=%s, Tags=%v, Price=%v, SoldQuantity=%v, Status=%v, Health=%v",
+				product.ID, product.Tags, product.Price, product.SoldQuantity, product.Status, product.Health)
 		}
 
 		allProducts = append(allProducts, product)
@@ -280,19 +416,22 @@ func (s *DeParaService) SearchProducts(tableName, query, searchBy string, page, 
 func (s *DeParaService) GetProductByID(tableName, id string) (*models.DeParaProduct, error) {
 	actualTableName := s.buildTableName(tableName)
 	query := fmt.Sprintf(`
-		SELECT id, mlbu, type, sku, company, permalink, 
+		SELECT id, mlbu, type, sku, company, permalink, price, sold_quantity, tags, status, health,
 		       ship_cost_slow, ship_cost_standard, ship_cost_nextday, 
-		       pictures, updated_at, created_at
+		       pictures, created_at_site, updated_at_site, updated_at, created_at
 		FROM %s 
 		WHERE id = @p1`, actualTableName)
 
 	var product models.DeParaProduct
 	var picturesJSON string
+	var createdAtSite, updatedAtSite sql.NullTime
 
 	err := s.db.QueryRow(query, id).Scan(
 		&product.ID, &product.MLBU, &product.Type, &product.SKU, &product.Company,
-		&product.Permalink, &product.ShipCostSlow, &product.ShipCostStandard,
-		&product.ShipCostNextday, &picturesJSON, &product.UpdatedAt, &product.CreatedAt,
+		&product.Permalink, &product.Price, &product.SoldQuantity, &product.Tags,
+		&product.Status, &product.Health, &product.ShipCostSlow, &product.ShipCostStandard,
+		&product.ShipCostNextday, &picturesJSON, &createdAtSite, &updatedAtSite,
+		&product.UpdatedAt, &product.CreatedAt,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -316,6 +455,14 @@ func (s *DeParaService) GetProductByID(tableName, id string) (*models.DeParaProd
 		}
 	} else {
 		product.Pictures = []string{}
+	}
+
+	// Set site timestamps
+	if createdAtSite.Valid {
+		product.CreatedAtSite = createdAtSite
+	}
+	if updatedAtSite.Valid {
+		product.UpdatedAtSite = updatedAtSite
 	}
 
 	return &product, nil
@@ -507,10 +654,3 @@ func (s *DeParaService) buildTableName(tableConfig string) string {
 	// Fallback to default table
 	return "integration.amazonas_psa.mercadolivre_base"
 }
-
-
-
-
-
-
-

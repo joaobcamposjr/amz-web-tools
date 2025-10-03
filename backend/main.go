@@ -150,6 +150,9 @@ func main() {
 		protected.POST("/dashboard/populate-test", h.PopulateTestData)
 		protected.GET("/dashboard/debug-queries", h.DebugQueries)
 		protected.GET("/test/tables-check", h.TestTablesCheck)
+
+		// Test routes
+		// protected.GET("/test/plate-cache", h.TestPlateCache) // TODO: Implement TestPlateCache handler
 	}
 
 	// Admin-only routes
