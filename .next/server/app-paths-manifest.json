@@ -1,3 +1,4 @@
 {
+  "/dashboard/stock/page": "app/dashboard/stock/page.js",
   "/dashboard/depara/page": "app/dashboard/depara/page.js"
 }

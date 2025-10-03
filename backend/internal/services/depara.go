@@ -117,25 +117,32 @@ func (s *DeParaService) hasColumn(tableName, columnName string) (bool, error) {
 	tableSchema := parts[1]     // amazonas_jeep
 	actualTableName := parts[2] // mercadolivre_base
 
+	log.Printf("🔍 Checking column %s in table %s (schema: %s, table_schema: %s, table_name: %s)", 
+		columnName, tableName, schemaName, tableSchema, actualTableName)
+
 	// Try different approaches to find the column
 	queries := []struct {
 		query string
 		args  []interface{}
+		desc  string
 	}{
+		// Try with the middle part as schema (most likely to work)
+		{
+			`SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @p1 AND TABLE_NAME = @p2 AND COLUMN_NAME = @p3`,
+			[]interface{}{tableSchema, actualTableName, columnName},
+			"schema as " + tableSchema + ", table as " + actualTableName,
+		},
 		// Try with full schema path
 		{
 			`SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @p1 AND TABLE_NAME = @p2 AND COLUMN_NAME = @p3`,
 			[]interface{}{schemaName, tableSchema + "." + actualTableName, columnName},
+			"schema as " + schemaName + ", table as " + tableSchema + "." + actualTableName,
 		},
 		// Try with just the table name
 		{
 			`SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @p1 AND TABLE_NAME = @p2 AND COLUMN_NAME = @p3`,
 			[]interface{}{schemaName, actualTableName, columnName},
-		},
-		// Try with the middle part as schema
-		{
-			`SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @p1 AND TABLE_NAME = @p2 AND COLUMN_NAME = @p3`,
-			[]interface{}{tableSchema, actualTableName, columnName},
+			"schema as " + schemaName + ", table as " + actualTableName,
 		},
 	}
 
@@ -143,11 +150,11 @@ func (s *DeParaService) hasColumn(tableName, columnName string) (bool, error) {
 		var count int
 		err := s.db.QueryRow(q.query, q.args...).Scan(&count)
 		if err != nil {
-			log.Printf("⚠️ Query %d failed for column %s: %v", i+1, columnName, err)
+			log.Printf("⚠️ Query %d failed for column %s (%s): %v", i+1, columnName, q.desc, err)
 			continue
 		}
 		if count > 0 {
-			log.Printf("✅ Column %s found with query %d", columnName, i+1)
+			log.Printf("✅ Column %s found with query %d (%s)", columnName, i+1, q.desc)
 			return true, nil
 		}
 	}
