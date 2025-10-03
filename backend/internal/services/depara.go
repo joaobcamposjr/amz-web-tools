@@ -124,19 +124,19 @@ func (s *DeParaService) hasColumn(tableName, columnName string) (bool, error) {
 	// Query 1: schema=amazonas_renault, table=mercadolivre_base (this one worked!)
 	query := `SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @p1 AND TABLE_NAME = @p2 AND COLUMN_NAME = @p3`
 	args := []interface{}{tableSchema, actualTableName, columnName}
-	
+
 	var count int
 	err := s.db.QueryRow(query, args...).Scan(&count)
 	if err != nil {
 		log.Printf("⚠️ Query failed for column %s: %v", columnName, err)
 		return false, err
 	}
-	
+
 	if count > 0 {
 		log.Printf("✅ Column %s found (count=%d)", columnName, count)
 		return true, nil
 	}
-	
+
 	log.Printf("❌ Column %s not found (count=%d)", columnName, count)
 	return false, nil
 }
