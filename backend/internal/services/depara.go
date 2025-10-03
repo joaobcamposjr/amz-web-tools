@@ -117,7 +117,7 @@ func (s *DeParaService) hasColumn(tableName, columnName string) (bool, error) {
 	tableSchema := parts[1]     // amazonas_jeep
 	actualTableName := parts[2] // mercadolivre_base
 
-	log.Printf("🔍 Checking column %s in table %s (schema: %s, table_schema: %s, table_name: %s)", 
+	log.Printf("🔍 Checking column %s in table %s (schema: %s, table_schema: %s, table_name: %s)",
 		columnName, tableName, schemaName, tableSchema, actualTableName)
 
 	// Try different approaches to find the column
@@ -128,21 +128,21 @@ func (s *DeParaService) hasColumn(tableName, columnName string) (bool, error) {
 	}{
 		// Try with the middle part as schema (most likely to work)
 		{
-			`SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @p1 AND TABLE_NAME = @p2 AND COLUMN_NAME = @p3`,
+			`SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
 			[]interface{}{tableSchema, actualTableName, columnName},
 			"schema as " + tableSchema + ", table as " + actualTableName,
 		},
-		// Try with full schema path
-		{
-			`SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @p1 AND TABLE_NAME = @p2 AND COLUMN_NAME = @p3`,
-			[]interface{}{schemaName, tableSchema + "." + actualTableName, columnName},
-			"schema as " + schemaName + ", table as " + tableSchema + "." + actualTableName,
-		},
 		// Try with just the table name
 		{
-			`SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @p1 AND TABLE_NAME = @p2 AND COLUMN_NAME = @p3`,
+			`SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
 			[]interface{}{schemaName, actualTableName, columnName},
 			"schema as " + schemaName + ", table as " + actualTableName,
+		},
+		// Try with full table name as table name
+		{
+			`SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+			[]interface{}{schemaName, tableSchema + "." + actualTableName, columnName},
+			"schema as " + schemaName + ", table as " + tableSchema + "." + actualTableName,
 		},
 	}
 
