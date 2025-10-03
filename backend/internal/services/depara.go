@@ -661,4 +661,3 @@ func (s *DeParaService) buildTableName(tableConfig string) string {
 	// Fallback to default table
 	return "integration.amazonas_psa.mercadolivre_base"
 }
-
