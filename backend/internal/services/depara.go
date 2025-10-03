@@ -170,27 +170,27 @@ func (s *DeParaService) SearchProducts(tableName, query, searchBy string, page, 
 
 	switch searchBy {
 	case "id":
-		whereClause = "WHERE id = @p1"
+		whereClause = "WHERE id = ?"
 		args = append(args, query)
 	case "mlbu":
-		whereClause = "WHERE mlbu = @p1"
+		whereClause = "WHERE mlbu = ?"
 		args = append(args, query)
 	case "sku":
-		whereClause = "WHERE sku LIKE @p1"
+		whereClause = "WHERE sku LIKE ?"
 		args = append(args, "%"+query+"%")
 	default:
 		// Auto-detect search type
 		if strings.HasPrefix(query, "MLBU") {
-			whereClause = "WHERE mlbu = @p1"
+			whereClause = "WHERE mlbu = ?"
 			args = append(args, query)
 			log.Printf("🔍 Auto-detected MLBU search for: %s", query)
 		} else if strings.HasPrefix(query, "MLB") && len(query) >= 10 {
-			whereClause = "WHERE id = @p1"
+			whereClause = "WHERE id = ?"
 			args = append(args, query)
 			log.Printf("🔍 Auto-detected ID search for: %s", query)
 		} else {
 			// Default to SKU search for anything else
-			whereClause = "WHERE sku LIKE @p1"
+			whereClause = "WHERE sku LIKE ?"
 			args = append(args, "%"+query+"%")
 			log.Printf("🔍 Auto-detected SKU search for: %s", query)
 		}
@@ -427,7 +427,7 @@ func (s *DeParaService) GetProductByID(tableName, id string) (*models.DeParaProd
 		       ship_cost_slow, ship_cost_standard, ship_cost_nextday, 
 		       pictures, created_at_site, updated_at_site, updated_at, created_at
 		FROM %s 
-		WHERE id = @p1`, actualTableName)
+		WHERE id = ?`, actualTableName)
 
 	var product models.DeParaProduct
 	var picturesJSON string
@@ -480,7 +480,7 @@ func (s *DeParaService) CreateProduct(req models.CreateDeParaRequest, userID, us
 	actualTableName := s.buildTableName(req.TableName)
 	query := fmt.Sprintf(`
 		INSERT INTO %s (id, mlbu, type, sku, company, permalink, pictures)
-		VALUES (@p1, @p2, @p3, @p4, @p5, @p6, @p7)`, actualTableName)
+		VALUES (?, ?, ?, ?, ?, ?, ?)`, actualTableName)
 
 	// Set default values
 	if req.MLBU == "" {
@@ -537,8 +537,8 @@ func (s *DeParaService) UpdateProduct(tableName, id string, req models.UpdateDeP
 
 	query := fmt.Sprintf(`
 		UPDATE %s 
-		SET sku = @p1, company = @p2, updated_at = GETDATE()
-		WHERE id = @p3`, actualTableName)
+		SET sku = ?, company = ?, updated_at = GETDATE()
+		WHERE id = ?`, actualTableName)
 
 	result, err := s.db.Exec(query, req.SKU, req.Company, id)
 	if err != nil {
@@ -597,7 +597,7 @@ func (s *DeParaService) DeleteProduct(tableName, id string, userID, userEmail, u
 		return fmt.Errorf("failed to get product for audit: %w", err)
 	}
 
-	query := fmt.Sprintf(`DELETE FROM %s WHERE id = @p1`, actualTableName)
+	query := fmt.Sprintf(`DELETE FROM %s WHERE id = ?`, actualTableName)
 
 	result, err := s.db.Exec(query, id)
 	if err != nil {
