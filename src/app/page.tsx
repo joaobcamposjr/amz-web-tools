@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Eye, EyeOff, LogIn, Car, Package, Database, Upload } from 'lucide-react'
+import api from '@/lib/api'
 
 export default function HomePage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -18,22 +19,14 @@ export default function HomePage() {
     setLoading(true)
 
     try {
-      const response = await fetch('/api/v1/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      })
+      const response = await api.post('/auth/login', formData)
 
-      const data = await response.json()
-
-      if (data.success) {
-        localStorage.setItem('token', data.data.token)
-        localStorage.setItem('user', JSON.stringify(data.data.user))
+      if (response.data.success) {
+        localStorage.setItem('token', response.data.data.token)
+        localStorage.setItem('user', JSON.stringify(response.data.data.user))
         router.push('/dashboard')
       } else {
-        alert(data.message || 'Erro ao fazer login')
+        alert(response.data.message || 'Erro ao fazer login')
       }
     } catch (error) {
       alert('Erro de conexão. Verifique se o backend está rodando.')

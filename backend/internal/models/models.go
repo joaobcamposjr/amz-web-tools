@@ -7,16 +7,16 @@ import (
 
 // User represents a user in the system
 type User struct {
-	ID                string    `json:"id" db:"id"`
-	Email             string    `json:"email" db:"email"`
-	PasswordHash      string    `json:"-" db:"password_hash"`
-	Name              string    `json:"name" db:"name"`
-	Department        string    `json:"department" db:"department"`
-	Role              string    `json:"role" db:"role"`
-	IsFirstLogin      bool      `json:"is_first_login" db:"is_first_login"`
-	PasswordChangedAt time.Time `json:"password_changed_at" db:"password_changed_at"`
-	CreatedAt         time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt         time.Time `json:"updated_at" db:"updated_at"`
+	ID                string       `json:"id" db:"id"`
+	Email             string       `json:"email" db:"email"`
+	PasswordHash      string       `json:"-" db:"password_hash"`
+	Name              string       `json:"name" db:"name"`
+	Department        string       `json:"department" db:"department"`
+	Role              string       `json:"role" db:"role"`
+	IsFirstLogin      sql.NullBool `json:"is_first_login" db:"is_first_login"`
+	PasswordChangedAt sql.NullTime `json:"password_changed_at" db:"password_changed_at"`
+	CreatedAt         time.Time    `json:"created_at" db:"created_at"`
+	UpdatedAt         time.Time    `json:"updated_at" db:"updated_at"`
 }
 
 // UserSession represents a user session

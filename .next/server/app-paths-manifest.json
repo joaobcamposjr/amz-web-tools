@@ -1,4 +1,6 @@
 {
-  "/dashboard/stock/page": "app/dashboard/stock/page.js",
-  "/dashboard/depara/page": "app/dashboard/depara/page.js"
+  "/page": "app/page.js",
+  "/dashboard/settings/page": "app/dashboard/settings/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/dashboard/users/page": "app/dashboard/users/page.js"
 }
