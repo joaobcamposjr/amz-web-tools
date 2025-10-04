@@ -2,14 +2,17 @@
 const nextConfig = {
   output: 'standalone',
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080',
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
   },
   async rewrites() {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL
+    if (!apiUrl) return []
+    // Since NEXT_PUBLIC_API_URL already contains /api/v1, just use it directly
+    const baseUrl = apiUrl.replace('/api/v1', '')
     return [
       {
         source: '/api/:path*',
-        destination: `${apiUrl}/api/:path*`,
+        destination: `${baseUrl}/api/:path*`,
       },
     ]
   },

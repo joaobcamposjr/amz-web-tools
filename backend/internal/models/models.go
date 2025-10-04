@@ -40,6 +40,7 @@ type RegisterRequest struct {
 	Password   string `json:"password" binding:"required,min=6"`
 	Name       string `json:"name" binding:"required"`
 	Department string `json:"department"`
+	Role       string `json:"role"`
 }
 
 // UpdateProfileRequest represents profile update request

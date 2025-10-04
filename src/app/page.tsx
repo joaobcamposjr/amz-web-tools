@@ -19,16 +19,22 @@ export default function HomePage() {
     setLoading(true)
 
     try {
+      console.log('Tentando fazer login com:', formData)
       const response = await api.post('/auth/login', formData)
+      console.log('Resposta do login:', response.data)
 
       if (response.data.success) {
+        console.log('Login bem-sucedido, salvando dados...')
         localStorage.setItem('token', response.data.data.token)
         localStorage.setItem('user', JSON.stringify(response.data.data.user))
+        console.log('Dados salvos, redirecionando...')
         router.push('/dashboard')
       } else {
+        console.error('Erro no login:', response.data.message)
         alert(response.data.message || 'Erro ao fazer login')
       }
     } catch (error) {
+      console.error('Erro de conexão:', error)
       alert('Erro de conexão. Verifique se o backend está rodando.')
     } finally {
       setLoading(false)
@@ -41,6 +47,7 @@ export default function HomePage() {
       [e.target.name]: e.target.value
     })
   }
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">

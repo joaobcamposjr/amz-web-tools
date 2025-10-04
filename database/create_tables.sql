@@ -208,27 +208,12 @@ BEGIN
 END
 
 -- =============================================
--- Insert Default Admin User
+-- Default Admin User Creation Removed
 -- =============================================
-IF NOT EXISTS (SELECT * FROM [dbo].[users] WHERE email = 'admin@amztools.com')
-BEGIN
-    INSERT INTO [dbo].[users] ([email], [password_hash], [name], [department], [role])
-    VALUES (
-        'admin@amztools.com',
-        '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', -- password: password
-        'Administrador',
-        'TI',
-        'admin'
-    );
-    
-    PRINT 'Default admin user created successfully';
-    PRINT 'Email: admin@amztools.com';
-    PRINT 'Password: password';
-END
-ELSE
-BEGIN
-    PRINT 'Default admin user already exists';
-END
+-- NOTA: Dados hardcoded removidos para segurança
+-- Use o sistema de registro através da interface web ou API
+PRINT 'Para criar usuários, use o sistema de registro através da interface web ou API';
+PRINT 'Não há mais dados hardcoded neste script';
 GO
 
 -- =============================================
@@ -262,9 +247,8 @@ END
 PRINT '=============================================';
 PRINT 'Database setup completed successfully!';
 PRINT '=============================================';
-PRINT 'Default admin credentials:';
-PRINT 'Email: admin@amztools.com';
-PRINT 'Password: password';
+PRINT 'Para criar usuários, use o sistema de registro';
+PRINT 'através da interface web ou API';
 PRINT '=============================================';
 GO
 

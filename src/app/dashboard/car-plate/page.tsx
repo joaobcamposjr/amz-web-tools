@@ -23,17 +23,22 @@ export default function CarPlatePage() {
   const loadSearchHistory = async () => {
     setHistoryLoading(true)
     try {
+      console.log('🔄 Loading search history...')
       const response = await fetch('/api/v1/car-plate/history', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
       })
       const data = await response.json()
+      console.log('📊 History response:', data)
       if (data.success) {
         setSearchHistory(data.data.history || [])
+        console.log('✅ History loaded:', data.data.history?.length || 0, 'items')
+      } else {
+        console.error('❌ History load failed:', data.message)
       }
     } catch (error) {
-      console.error('Error loading search history:', error)
+      console.error('❌ Error loading search history:', error)
     } finally {
       setHistoryLoading(false)
     }
@@ -62,6 +67,7 @@ export default function CarPlatePage() {
         setChassi(data.data.chassi || null) // Extract chassi if available
         setBrandLogo(data.data.brand_logo || null) // Extract brand logo if available
         setError('')
+        console.log('✅ Search successful, reloading history...')
         // Reload search history to get real data
         loadSearchHistory()
       } else {
@@ -75,6 +81,9 @@ export default function CarPlatePage() {
       }
     } catch (error) {
       setError('Erro de conexão. Verifique se o backend está rodando.')
+      console.log('❌ Search error, reloading history...')
+      // Reload search history even on error
+      loadSearchHistory()
     } finally {
       setLoading(false)
     }

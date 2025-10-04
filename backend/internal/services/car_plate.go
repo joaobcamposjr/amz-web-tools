@@ -10,25 +10,35 @@ import (
 	"strings"
 	"time"
 
-	_ "github.com/lib/pq"          // PostgreSQL driver
-	_ "github.com/sijms/go-ora/v2" // Oracle driver
+	_ "github.com/lib/pq"               // PostgreSQL driver
+	_ "github.com/microsoft/go-mssqldb" // SQL Server driver
+	_ "github.com/sijms/go-ora/v2"      // Oracle driver
 
 	"amz-web-tools/backend/internal/config"
 	"amz-web-tools/backend/internal/models"
 )
 
 type CarPlateService struct {
-	db     *sql.DB
-	Config *config.Config
+	db           *sql.DB
+	plateCacheDB *sql.DB
+	Config       *config.Config
 }
 
 // PlateAPIResponse represents the raw JSON response from the API
 type PlateAPIResponse map[string]interface{}
 
 func NewCarPlateService(db *sql.DB, cfg *config.Config) *CarPlateService {
+	// Criar conexão específica para cache de placa no banco portal
+	plateCacheDB, err := sql.Open("sqlserver", "server=54.204.42.134;user id=sa;password=321@Mudar@7089341@;database=portal;encrypt=disable")
+	if err != nil {
+		// Se não conseguir conectar no portal, usar o banco principal
+		plateCacheDB = db
+	}
+
 	return &CarPlateService{
-		db:     db,
-		Config: cfg,
+		db:           db,
+		plateCacheDB: plateCacheDB,
+		Config:       cfg,
 	}
 }
 
@@ -96,7 +106,7 @@ func (s *CarPlateService) GetCacheStats() (map[string]interface{}, error) {
 
 	// Total cache entries
 	var totalCount int
-	err := s.db.QueryRow("SELECT COUNT(*) FROM plate_cache").Scan(&totalCount)
+	err := s.plateCacheDB.QueryRow("SELECT COUNT(*) FROM dbo.plate_cache").Scan(&totalCount)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get total count: %w", err)
 	}
@@ -104,7 +114,7 @@ func (s *CarPlateService) GetCacheStats() (map[string]interface{}, error) {
 
 	// Valid cache entries
 	var validCount int
-	err = s.db.QueryRow("SELECT COUNT(*) FROM plate_cache WHERE expires_at > GETDATE()").Scan(&validCount)
+	err = s.plateCacheDB.QueryRow("SELECT COUNT(*) FROM dbo.plate_cache WHERE expires_at > GETDATE()").Scan(&validCount)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get valid count: %w", err)
 	}
@@ -112,7 +122,7 @@ func (s *CarPlateService) GetCacheStats() (map[string]interface{}, error) {
 
 	// Expired cache entries
 	var expiredCount int
-	err = s.db.QueryRow("SELECT COUNT(*) FROM plate_cache WHERE expires_at <= GETDATE()").Scan(&expiredCount)
+	err = s.plateCacheDB.QueryRow("SELECT COUNT(*) FROM dbo.plate_cache WHERE expires_at <= GETDATE()").Scan(&expiredCount)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get expired count: %w", err)
 	}
@@ -131,11 +141,11 @@ func (s *CarPlateService) GetCacheStats() (map[string]interface{}, error) {
 // getFromCache retrieves plate data from database cache
 func (s *CarPlateService) getFromCache(plate string) (*PlateAPIResponse, error) {
 	query := `
-		SELECT data FROM plate_cache 
+		SELECT data FROM dbo.plate_cache 
 		WHERE plate = @p1 AND expires_at > GETDATE()`
 
 	var dataJSON string
-	err := s.db.QueryRow(query, sql.Named("p1", plate)).Scan(&dataJSON)
+	err := s.plateCacheDB.QueryRow(query, sql.Named("p1", plate)).Scan(&dataJSON)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil // Not found in cache
@@ -212,7 +222,7 @@ func (s *CarPlateService) saveToCache(plate string, data *PlateAPIResponse) erro
 	expiresAt := time.Now().Add(7 * 24 * time.Hour)
 
 	query := `
-		MERGE plate_cache AS target
+		MERGE dbo.plate_cache AS target
 		USING (SELECT @p1 AS plate, @p2 AS data, @p3 AS expires_at) AS source
 		ON target.plate = source.plate
 		WHEN MATCHED THEN
@@ -220,7 +230,7 @@ func (s *CarPlateService) saveToCache(plate string, data *PlateAPIResponse) erro
 		WHEN NOT MATCHED THEN
 			INSERT (plate, data, expires_at) VALUES (source.plate, source.data, source.expires_at);`
 
-	_, err = s.db.Exec(query, plate, string(dataJSON), expiresAt)
+	_, err = s.plateCacheDB.Exec(query, plate, string(dataJSON), expiresAt)
 	if err != nil {
 		return fmt.Errorf("failed to save to cache: %w", err)
 	}
@@ -240,10 +250,10 @@ func (s *CarPlateService) saveToHistory(plate string, data *PlateAPIResponse, st
 	}
 
 	query := `
-		INSERT INTO car_plate_history (plate, response_data, status, error_message, user_id)
+		INSERT INTO dbo.car_plate_history (plate, response_data, status, error_message, user_id)
 		VALUES (@p1, @p2, @p3, @p4, @p5)`
 
-	_, err := s.db.Exec(query, plate, responseData, status, errorMessage, userID)
+	_, err := s.plateCacheDB.Exec(query, plate, responseData, status, errorMessage, userID)
 	if err != nil {
 		log.Printf("⚠️ Warning: Failed to save plate %s to history: %v", plate, err)
 	} else {
@@ -253,13 +263,13 @@ func (s *CarPlateService) saveToHistory(plate string, data *PlateAPIResponse, st
 
 // GetPlateHistory retrieves search history for a user
 func (s *CarPlateService) GetPlateHistory(userID string, limit int) ([]models.CarPlateHistory, error) {
+	// Buscar os últimos 10 registros independente do usuário
 	query := `
-		SELECT TOP (@p1) id, plate, response_data, status, error_message, created_at, user_id
-		FROM car_plate_history 
-		WHERE user_id = @p2 OR user_id IS NULL
+		SELECT TOP 10 CONVERT(NVARCHAR(36), id), plate, response_data, status, error_message, created_at, CONVERT(NVARCHAR(36), user_id)
+		FROM dbo.car_plate_history 
 		ORDER BY created_at DESC`
 
-	rows, err := s.db.Query(query, sql.Named("p1", limit), sql.Named("p2", userID))
+	rows, err := s.plateCacheDB.Query(query)
 	if err != nil {
 		return nil, err
 	}
@@ -280,9 +290,9 @@ func (s *CarPlateService) GetPlateHistory(userID string, limit int) ([]models.Ca
 
 // CleanExpiredCache removes expired cache entries
 func (s *CarPlateService) CleanExpiredCache() error {
-	query := `DELETE FROM plate_cache WHERE expires_at < GETDATE()`
+	query := `DELETE FROM dbo.plate_cache WHERE expires_at < GETDATE()`
 
-	result, err := s.db.Exec(query)
+	result, err := s.plateCacheDB.Exec(query)
 	if err != nil {
 		return err
 	}
@@ -306,8 +316,8 @@ func (s *CarPlateService) GetDashboardStats() (*DashboardStats, error) {
 	stats := &DashboardStats{}
 
 	// 1. Consultas de Placa - contagem da tabela plate_cache no SQL Server
-	query1 := `SELECT COUNT(*) FROM portal.dbo.plate_cache`
-	err := s.db.QueryRow(query1).Scan(&stats.CarPlateQueries)
+	query1 := `SELECT COUNT(*) FROM dbo.plate_cache`
+	err := s.plateCacheDB.QueryRow(query1).Scan(&stats.CarPlateQueries)
 	if err != nil {
 		log.Printf("Error getting car plate queries count: %v", err)
 		stats.CarPlateQueries = 0

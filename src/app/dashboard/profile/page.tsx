@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import api from '@/lib/api';
 
 interface User {
   id: string;
@@ -61,19 +62,8 @@ export default function ProfilePage() {
 
   const fetchProfile = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/v1/profile', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch profile');
-      }
-
-      const data = await response.json();
+      const response = await api.get('/profile');
+      const data = response.data;
       setUser(data.data.user);
       setProfileForm({
         name: data.data.user.name,
@@ -98,22 +88,8 @@ export default function ProfilePage() {
     setSuccess('');
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/v1/profile', {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(profileForm)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update profile');
-      }
-
-      const data = await response.json();
+      const response = await api.put('/profile', profileForm);
+      const data = response.data;
       setUser(data.data.user);
       setSuccess('Perfil atualizado com sucesso!');
     } catch (err: any) {
@@ -138,24 +114,10 @@ export default function ProfilePage() {
     }
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/v1/profile/password', {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          current_password: passwordForm.current_password,
-          new_password: passwordForm.new_password
-        })
+      const response = await api.put('/profile/password', {
+        current_password: passwordForm.current_password,
+        new_password: passwordForm.new_password
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update password');
-      }
-
       setSuccess('Senha atualizada com sucesso!');
       setShowPasswordModal(false);
       setPasswordForm({ current_password: '', new_password: '', confirm_password: '' });
@@ -170,21 +132,7 @@ export default function ProfilePage() {
     setSuccess('');
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/v1/auth/first-login', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(firstLoginForm)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to change password');
-      }
-
+      const response = await api.post('/auth/first-login', firstLoginForm);
       setSuccess('Senha alterada com sucesso! Agora você pode acessar o sistema normalmente.');
       setShowFirstLoginModal(false);
       setFirstLoginForm({ new_password: '' });
@@ -465,3 +413,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+

@@ -8,15 +8,27 @@ import (
 	"amz-web-tools/backend/internal/models"
 
 	"github.com/golang-jwt/jwt/v5"
+	_ "github.com/microsoft/go-mssqldb"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthService struct {
-	db *sql.DB
+	db      *sql.DB
+	usersDB *sql.DB
 }
 
 func NewAuthService(db *sql.DB) *AuthService {
-	return &AuthService{db: db}
+	// Criar conexão específica para usuários no banco portal
+	usersDB, err := sql.Open("sqlserver", "server=54.204.42.134;user id=sa;password=321@Mudar@7089341@;database=portal;encrypt=disable")
+	if err != nil {
+		// Se não conseguir conectar no portal, usar o banco principal
+		usersDB = db
+	}
+
+	return &AuthService{
+		db:      db,
+		usersDB: usersDB,
+	}
 }
 
 // HashPassword hashes a password using bcrypt
@@ -48,7 +60,7 @@ func (s *AuthService) GenerateJWT(userID, role, secret string, expireHours int) 
 func (s *AuthService) RegisterUser(req *models.RegisterRequest) (*models.User, error) {
 	// Check if user already exists
 	var count int
-	err := s.db.QueryRow("SELECT COUNT(*) FROM users WHERE email = @p1", req.Email).Scan(&count)
+	err := s.usersDB.QueryRow("SELECT COUNT(*) FROM dbo.users WHERE email = @p1", req.Email).Scan(&count)
 	if err != nil {
 		return nil, err
 	}
@@ -64,12 +76,12 @@ func (s *AuthService) RegisterUser(req *models.RegisterRequest) (*models.User, e
 
 	// Insert user
 	query := `
-		INSERT INTO users (email, password_hash, name, department, role)
-		OUTPUT INSERTED.id, INSERTED.email, INSERTED.name, INSERTED.department, INSERTED.role, INSERTED.created_at, INSERTED.updated_at
-		VALUES (@p1, @p2, @p3, @p4, 'user')`
+		INSERT INTO dbo.users (email, password_hash, name, department, role)
+		OUTPUT CONVERT(NVARCHAR(36), INSERTED.id), INSERTED.email, INSERTED.name, INSERTED.department, INSERTED.role, INSERTED.created_at, INSERTED.updated_at
+		VALUES (@p1, @p2, @p3, @p4, @p5)`
 
 	var user models.User
-	err = s.db.QueryRow(query, req.Email, hashedPassword, req.Name, req.Department).Scan(
+	err = s.usersDB.QueryRow(query, req.Email, hashedPassword, req.Name, req.Department, req.Role).Scan(
 		&user.ID, &user.Email, &user.Name, &user.Department, &user.Role, &user.CreatedAt, &user.UpdatedAt,
 	)
 
@@ -83,11 +95,11 @@ func (s *AuthService) RegisterUser(req *models.RegisterRequest) (*models.User, e
 // LoginUser authenticates a user and returns user info
 func (s *AuthService) LoginUser(req *models.LoginRequest) (*models.User, error) {
 	query := `
-		SELECT CAST(id AS NVARCHAR(36)), email, password_hash, name, department, role, is_first_login, password_changed_at, created_at, updated_at
-		FROM users WHERE email = @p1`
+		SELECT CONVERT(NVARCHAR(36), id), email, password_hash, name, department, role, is_first_login, password_changed_at, created_at, updated_at
+		FROM dbo.users WHERE email = @p1`
 
 	var user models.User
-	err := s.db.QueryRow(query, req.Email).Scan(
+	err := s.usersDB.QueryRow(query, req.Email).Scan(
 		&user.ID, &user.Email, &user.PasswordHash, &user.Name, &user.Department, &user.Role,
 		&user.IsFirstLogin, &user.PasswordChangedAt, &user.CreatedAt, &user.UpdatedAt,
 	)
@@ -110,11 +122,11 @@ func (s *AuthService) LoginUser(req *models.LoginRequest) (*models.User, error) 
 // GetUserByID retrieves a user by ID
 func (s *AuthService) GetUserByID(userID string) (*models.User, error) {
 	query := `
-		SELECT CAST(id AS NVARCHAR(36)), email, name, department, role, is_first_login, password_changed_at, created_at, updated_at
-		FROM users WHERE id = @p1`
+		SELECT CONVERT(NVARCHAR(36), id), email, name, department, role, is_first_login, password_changed_at, created_at, updated_at
+		FROM dbo.users WHERE id = @p1`
 
 	var user models.User
-	err := s.db.QueryRow(query, userID).Scan(
+	err := s.usersDB.QueryRow(query, userID).Scan(
 		&user.ID, &user.Email, &user.Name, &user.Department, &user.Role,
 		&user.IsFirstLogin, &user.PasswordChangedAt, &user.CreatedAt, &user.UpdatedAt,
 	)
@@ -129,13 +141,13 @@ func (s *AuthService) GetUserByID(userID string) (*models.User, error) {
 // UpdateUserProfile updates user profile information
 func (s *AuthService) UpdateUserProfile(userID string, req *models.UpdateProfileRequest) (*models.User, error) {
 	query := `
-		UPDATE users 
+		UPDATE dbo.users 
 		SET name = @p1, department = @p2, updated_at = GETDATE()
-		OUTPUT INSERTED.id, INSERTED.email, INSERTED.name, INSERTED.department, INSERTED.role, INSERTED.created_at, INSERTED.updated_at
+		OUTPUT CONVERT(NVARCHAR(36), INSERTED.id), INSERTED.email, INSERTED.name, INSERTED.department, INSERTED.role, INSERTED.created_at, INSERTED.updated_at
 		WHERE id = @p3`
 
 	var user models.User
-	err := s.db.QueryRow(query, req.Name, req.Department, userID).Scan(
+	err := s.usersDB.QueryRow(query, req.Name, req.Department, userID).Scan(
 		&user.ID, &user.Email, &user.Name, &user.Department, &user.Role, &user.CreatedAt, &user.UpdatedAt,
 	)
 
@@ -150,7 +162,7 @@ func (s *AuthService) UpdateUserProfile(userID string, req *models.UpdateProfile
 func (s *AuthService) UpdateUserPassword(userID, currentPassword, newPassword string) error {
 	// First, verify current password
 	var currentHash string
-	err := s.db.QueryRow("SELECT password_hash FROM users WHERE id = @p1", userID).Scan(&currentHash)
+	err := s.usersDB.QueryRow("SELECT password_hash FROM dbo.users WHERE id = @p1", userID).Scan(&currentHash)
 	if err != nil {
 		return err
 	}
@@ -166,7 +178,7 @@ func (s *AuthService) UpdateUserPassword(userID, currentPassword, newPassword st
 	}
 
 	// Update password
-	_, err = s.db.Exec("UPDATE users SET password_hash = @p1, updated_at = GETDATE() WHERE id = @p2", newHash, userID)
+	_, err = s.usersDB.Exec("UPDATE dbo.users SET password_hash = @p1, updated_at = GETDATE() WHERE id = @p2", newHash, userID)
 	return err
 }
 
@@ -174,7 +186,7 @@ func (s *AuthService) UpdateUserPassword(userID, currentPassword, newPassword st
 func (s *AuthService) CreateUser(req *models.CreateUserRequest) (*models.User, error) {
 	// Check if user already exists
 	var count int
-	err := s.db.QueryRow("SELECT COUNT(*) FROM users WHERE email = @p1", req.Email).Scan(&count)
+	err := s.usersDB.QueryRow("SELECT COUNT(*) FROM dbo.users WHERE email = @p1", req.Email).Scan(&count)
 	if err != nil {
 		return nil, err
 	}
@@ -190,12 +202,12 @@ func (s *AuthService) CreateUser(req *models.CreateUserRequest) (*models.User, e
 
 	// Insert user
 	query := `
-		INSERT INTO users (email, password_hash, name, department, role, is_first_login, password_changed_at)
-		OUTPUT INSERTED.id, INSERTED.email, INSERTED.name, INSERTED.department, INSERTED.role, INSERTED.is_first_login, INSERTED.password_changed_at, INSERTED.created_at, INSERTED.updated_at
+		INSERT INTO dbo.users (email, password_hash, name, department, role, is_first_login, password_changed_at)
+		OUTPUT CONVERT(NVARCHAR(36), INSERTED.id), INSERTED.email, INSERTED.name, INSERTED.department, INSERTED.role, INSERTED.is_first_login, INSERTED.password_changed_at, INSERTED.created_at, INSERTED.updated_at
 		VALUES (@p1, @p2, @p3, @p4, @p5, @p6, @p7)`
 
 	var user models.User
-	err = s.db.QueryRow(query, req.Email, hashedPassword, req.Name, req.Department, req.Role, true, time.Now()).Scan(
+	err = s.usersDB.QueryRow(query, req.Email, hashedPassword, req.Name, req.Department, req.Role, true, time.Now()).Scan(
 		&user.ID, &user.Email, &user.Name, &user.Department, &user.Role, &user.IsFirstLogin, &user.PasswordChangedAt, &user.CreatedAt, &user.UpdatedAt,
 	)
 
@@ -209,10 +221,10 @@ func (s *AuthService) CreateUser(req *models.CreateUserRequest) (*models.User, e
 // GetAllUsers retrieves all users (Admin only)
 func (s *AuthService) GetAllUsers() ([]models.User, error) {
 	query := `
-		SELECT id, email, name, department, role, is_first_login, password_changed_at, created_at, updated_at
-		FROM users ORDER BY created_at DESC`
+		SELECT CONVERT(NVARCHAR(36), id), email, name, department, role, is_first_login, password_changed_at, created_at, updated_at
+		FROM dbo.users ORDER BY created_at DESC`
 
-	rows, err := s.db.Query(query)
+	rows, err := s.usersDB.Query(query)
 	if err != nil {
 		return nil, err
 	}
@@ -237,13 +249,13 @@ func (s *AuthService) GetAllUsers() ([]models.User, error) {
 // UpdateUser updates a user (Admin only)
 func (s *AuthService) UpdateUser(req *models.UpdateUserRequest) (*models.User, error) {
 	query := `
-		UPDATE users 
+		UPDATE dbo.users 
 		SET name = @p1, department = @p2, role = @p3, updated_at = GETDATE()
-		OUTPUT INSERTED.id, INSERTED.email, INSERTED.name, INSERTED.department, INSERTED.role, INSERTED.is_first_login, INSERTED.password_changed_at, INSERTED.created_at, INSERTED.updated_at
+		OUTPUT CONVERT(NVARCHAR(36), INSERTED.id), INSERTED.email, INSERTED.name, INSERTED.department, INSERTED.role, INSERTED.is_first_login, INSERTED.password_changed_at, INSERTED.created_at, INSERTED.updated_at
 		WHERE id = @p4`
 
 	var user models.User
-	err := s.db.QueryRow(query, req.Name, req.Department, req.Role, req.ID).Scan(
+	err := s.usersDB.QueryRow(query, req.Name, req.Department, req.Role, req.ID).Scan(
 		&user.ID, &user.Email, &user.Name, &user.Department, &user.Role,
 		&user.IsFirstLogin, &user.PasswordChangedAt, &user.CreatedAt, &user.UpdatedAt,
 	)
@@ -264,8 +276,8 @@ func (s *AuthService) ResetUserPassword(req *models.ResetPasswordRequest) error 
 	}
 
 	// Update password and reset first login flag
-	_, err = s.db.Exec(`
-		UPDATE users 
+	_, err = s.usersDB.Exec(`
+		UPDATE dbo.users 
 		SET password_hash = @p1, is_first_login = 1, password_changed_at = GETDATE(), updated_at = GETDATE() 
 		WHERE id = @p2`,
 		hashedPassword, req.UserID)
@@ -282,8 +294,8 @@ func (s *AuthService) ChangePasswordFirstLogin(userID, newPassword string) error
 	}
 
 	// Update password and set first login to false
-	_, err = s.db.Exec(`
-		UPDATE users 
+	_, err = s.usersDB.Exec(`
+		UPDATE dbo.users 
 		SET password_hash = @p1, is_first_login = 0, password_changed_at = GETDATE(), updated_at = GETDATE() 
 		WHERE id = @p2`,
 		hashedPassword, userID)
@@ -293,6 +305,6 @@ func (s *AuthService) ChangePasswordFirstLogin(userID, newPassword string) error
 
 // DeleteUser deletes a user (Admin only)
 func (s *AuthService) DeleteUser(userID string) error {
-	_, err := s.db.Exec("DELETE FROM users WHERE id = @p1", userID)
+	_, err := s.usersDB.Exec("DELETE FROM dbo.users WHERE id = @p1", userID)
 	return err
 }

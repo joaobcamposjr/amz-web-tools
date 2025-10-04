@@ -1,35 +1,60 @@
 {
   "pages": {
+    "/dashboard/users/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/dashboard/users/page.js"
+    ],
     "/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
-    "/page": [
+    "/dashboard/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/page.js"
+      "static/chunks/app/dashboard/layout.js"
+    ],
+    "/dashboard/profile/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/dashboard/profile/page.js"
     ],
     "/dashboard/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/dashboard/page.js"
     ],
-    "/dashboard/layout": [
+    "/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/dashboard/layout.js"
+      "static/chunks/app/page.js"
     ],
-    "/dashboard/users/page": [
+    "/dashboard/car-plate/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/dashboard/users/page.js"
+      "static/chunks/app/dashboard/car-plate/page.js"
     ],
-    "/dashboard/settings/page": [
+    "/dashboard/stock/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/dashboard/settings/page.js"
+      "static/chunks/app/dashboard/stock/page.js"
+    ],
+    "/dashboard/depara/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/dashboard/depara/page.js"
+    ],
+    "/dashboard/import-xml/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/dashboard/import-xml/page.js"
+    ],
+    "/dashboard/integration/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/dashboard/integration/page.js"
     ]
   }
 }

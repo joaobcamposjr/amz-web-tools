@@ -58,13 +58,7 @@ const navigation = [
     roles: ['admin', 'operacao']
   },
   { 
-    name: 'XML Integrator', 
-    href: '/dashboard/xml-integrator', 
-    icon: Upload,
-    roles: ['admin', 'operacao']
-  },
-  { 
-    name: 'Usuários', 
+    name: 'Users', 
     href: '/dashboard/users', 
     icon: Users,
     roles: ['admin']
@@ -72,8 +66,8 @@ const navigation = [
 ]
 
 const profileNavigation = [
-  { name: 'Perfil', href: '/dashboard/profile', icon: User },
-  { name: 'Configurações', href: '/dashboard/settings', icon: Settings, roles: ['admin'] },
+  { name: 'Profile', href: '/dashboard/profile', icon: User },
+  { name: 'Settings', href: '/dashboard/settings', icon: Settings, roles: ['admin'] },
 ]
 
 export default function Sidebar() {

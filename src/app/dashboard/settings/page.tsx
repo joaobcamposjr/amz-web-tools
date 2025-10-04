@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import api from '@/lib/api';
 
 interface User {
   id: string;
@@ -63,20 +64,8 @@ export default function SettingsPage() {
 
   const fetchUsers = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/v1/users', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch users');
-      }
-
-      const data = await response.json();
-      setUsers(data.data);
+      const response = await api.get('/users');
+      setUsers(response.data.data);
     } catch (err) {
       setError('Erro ao carregar usuários');
       console.error('Error fetching users:', err);
@@ -91,21 +80,7 @@ export default function SettingsPage() {
     setSuccess('');
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/v1/users', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(createForm)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create user');
-      }
-
+      const response = await api.post('/users', createForm);
       setSuccess('Usuário criado com sucesso!');
       setShowCreateModal(false);
       setCreateForm({ email: '', name: '', department: '', role: 'atendimento', password: '' });
@@ -121,21 +96,7 @@ export default function SettingsPage() {
     setSuccess('');
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/v1/users', {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(editForm)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update user');
-      }
-
+      const response = await api.put('/users', editForm);
       setSuccess('Usuário atualizado com sucesso!');
       setShowEditModal(false);
       setSelectedUser(null);
@@ -152,21 +113,7 @@ export default function SettingsPage() {
     setSuccess('');
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/v1/users/reset-password', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ user_id: selectedUser.id })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to reset password');
-      }
-
+      const response = await api.post('/users/reset-password', { user_id: selectedUser.id });
       setSuccess('Senha redefinida com sucesso! O usuário precisará alterar a senha no próximo login.');
       setShowResetModal(false);
       setSelectedUser(null);
@@ -183,20 +130,7 @@ export default function SettingsPage() {
     setSuccess('');
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/v1/users/${userId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to delete user');
-      }
-
+      const response = await api.delete(`/users/${userId}`);
       setSuccess('Usuário excluído com sucesso!');
       fetchUsers();
     } catch (err: any) {

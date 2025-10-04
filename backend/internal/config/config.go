@@ -52,11 +52,11 @@ type Config struct {
 
 func Load() *Config {
 	return &Config{
-		DBHost:     getEnv("DB_HOST", "localhost"),
+		DBHost:     getEnv("DB_HOST", ""),
 		DBPort:     getEnv("DB_PORT", "1433"),
-		DBUser:     getEnv("DB_USER", "sa"),
+		DBUser:     getEnv("DB_USER", ""),
 		DBPassword: getEnv("DB_PASSWORD", ""),
-		DBName:     getEnv("DB_NAME", "portal"),
+		DBName:     getEnv("DB_NAME", ""),
 		DBSSLMode:  getEnv("DB_SSL_MODE", "disable"),
 
 		OracleHost:     getEnv("ORACLE_HOST", ""),
@@ -74,7 +74,7 @@ func Load() *Config {
 		PGSSLMode:  getEnv("PG_SSL_MODE", "disable"),
 
 		ServerPort:     getEnv("SERVER_PORT", "8080"),
-		JWTSecret:      getEnv("JWT_SECRET", "your-secret-key"),
+		JWTSecret:      getEnv("JWT_SECRET", ""),
 		JWTExpireHours: getEnvAsInt("JWT_EXPIRE_HOURS", 168), // 7 dias
 
 		PlateAPIURL: getEnv("PLATE_API_URL", ""),
@@ -82,7 +82,7 @@ func Load() *Config {
 
 		Environment: getEnv("ENVIRONMENT", "development"),
 
-		CORSAllowedOrigins: strings.Split(getEnv("CORS_ALLOWED_ORIGINS", "http://localhost:3000"), ","),
+		CORSAllowedOrigins: strings.Split(getEnv("CORS_ALLOWED_ORIGINS", ""), ","),
 
 		LogLevel: getEnv("LOG_LEVEL", "info"),
 	}
