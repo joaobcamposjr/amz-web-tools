@@ -106,7 +106,12 @@ fuser -k 3001/tcp 2>/dev/null || true
 fuser -k 3002/tcp 2>/dev/null || true
 fuser -k 3003/tcp 2>/dev/null || true
 
-sleep 3
+# Extra aggressive cleanup for port 3000
+echo "🔫 Extra cleanup for port 3000..."
+lsof -ti:3000 | xargs kill -9 2>/dev/null || true
+netstat -tlnp 2>/dev/null | grep :3000 | awk '{print $7}' | cut -d'/' -f1 | xargs kill -9 2>/dev/null || true
+
+sleep 5
 echo "✅ Process cleanup completed"
 
 # =============================================
