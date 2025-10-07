@@ -200,17 +200,32 @@ fi
 # Start Frontend
 echo "🚀 Starting frontend..."
 cd "$BASE"
-nohup node .next/standalone/server.js --hostname 0.0.0.0 --port 3000 > "$LOGS/frontend.log" 2>&1 & echo $! > "$PID_DIR/frontend.pid"
-sleep 5
+HOSTNAME=0.0.0.0 PORT=3000 nohup node .next/standalone/server.js > "$LOGS/frontend.log" 2>&1 & echo $! > "$PID_DIR/frontend.pid"
+sleep 10
 
 # Check if frontend started
-if curl -s http://localhost:3000 > /dev/null; then
-    echo -e "${GREEN}✅ Frontend started successfully on port 3000${NC}"
-else
-    echo -e "${RED}❌ Frontend failed to start${NC}"
+RETRIES=0
+MAX_RETRIES=30
+while [ $RETRIES -lt $MAX_RETRIES ]; do
+    if curl -s http://localhost:3000 > /dev/null; then
+        echo -e "${GREEN}✅ Frontend started successfully on port 3000${NC}"
+        break
+    fi
+    RETRIES=$((RETRIES + 1))
+    if [ $RETRIES -lt $MAX_RETRIES ]; then
+        echo "⏳ Waiting for frontend to start... ($RETRIES/$MAX_RETRIES)"
+        sleep 2
+    fi
+done
+
+if [ $RETRIES -eq $MAX_RETRIES ]; then
+    echo -e "${RED}❌ Frontend failed to start after $MAX_RETRIES attempts${NC}"
     echo "📋 Frontend logs:"
-    tail -10 "$LOGS/frontend.log"
-    exit 1
+    tail -20 "$LOGS/frontend.log"
+    echo ""
+    echo "🔍 Checking if frontend process is running..."
+    ps aux | grep "node .next/standalone/server.js" | grep -v grep || echo "No frontend process found"
+    # Don't exit - let's see backend status
 fi
 
 # =============================================
