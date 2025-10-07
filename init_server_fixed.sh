@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # =============================================
-# AMZ Web Tools - Server Initialization
+# AMZ Web Tools - Server Initialization (FIXED)
 # =============================================
 
 BASE="/d02/projects/amz-web-tools"
@@ -17,15 +17,15 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-echo -e "${BLUE}🚀 AMZ Web Tools - Server Initialization${NC}"
-echo -e "${BLUE}=========================================${NC}"
+echo -e "${BLUE}🚀 AMZ Web Tools - Server Initialization (FIXED)${NC}"
+echo -e "${BLUE}=================================================${NC}"
 
 # =============================================
-# 1. Setup Environment Variables
+# 1. Setup Environment Variables (FIXED)
 # =============================================
 echo -e "${YELLOW}🔧 Setting up environment variables...${NC}"
 
-# Oracle Environment
+# Oracle Environment (FIXED - handle undefined LD_LIBRARY_PATH)
 export ORACLE_HOME=/opt/oracle/instantclient_21_7
 export LD_LIBRARY_PATH="$ORACLE_HOME:${LD_LIBRARY_PATH:-}"
 export PATH="$ORACLE_HOME:$PATH"
@@ -43,6 +43,7 @@ export FRONTEND_HOST=0.0.0.0
 
 # Log environment setup
 echo "✅ Oracle Home: $ORACLE_HOME"
+echo "✅ LD Library Path: $LD_LIBRARY_PATH"
 echo "✅ Go Cache: $GOCACHE"
 echo "✅ Go Module Cache: $GOMODCACHE"
 
@@ -167,6 +168,7 @@ echo -e "${YELLOW}🔨 Building applications...${NC}"
 # Build Go backend
 echo "🔨 Building Go backend..."
 cd "$BASE/backend"
+mkdir -p "$BASE/bin"
 go build -o "$BASE/bin/backend" .
 echo "✅ Backend built successfully"
 

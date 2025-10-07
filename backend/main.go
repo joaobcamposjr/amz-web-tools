@@ -173,7 +173,7 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
-	
+
 	host := os.Getenv("SERVER_HOST")
 	if host == "" {
 		host = "0.0.0.0"
