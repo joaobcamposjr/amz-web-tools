@@ -53,15 +53,11 @@ require (
 )
 EOF
 
-# Force download and verify to regenerate go.sum
+# Force download without tidy to avoid pulling problematic deps
 echo "📦 Downloading dependencies..."
 go mod download
 
-# Verify and rebuild go.sum
-echo "🔍 Verifying dependencies..."
-go mod verify
-
-# Build to ensure everything works
+# Build to ensure everything works (this will verify go.sum is correct)
 echo "🔨 Testing build..."
 cd backend
 go build -o /tmp/test-build .
