@@ -149,8 +149,8 @@ echo -e "${YELLOW}📦 Installing dependencies...${NC}"
 # Go dependencies
 echo "🔧 Fixing Go dependencies..."
 cd "$BASE"
-chmod +x fix_go_dependencies.sh
-./fix_go_dependencies.sh
+chmod +x fix_go_final.sh
+./fix_go_final.sh
 echo "✅ Go dependencies fixed"
 
 # Node.js dependencies
