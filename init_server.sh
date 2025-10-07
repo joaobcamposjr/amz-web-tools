@@ -93,9 +93,18 @@ kill_process "go run main.go"
 kill_process "next dev"
 kill_process "next start"
 kill_process "node.*next"
+kill_process "node .next/standalone/server.js"
 kill_process "amz-web-tools"
 
-sleep 2
+# Force kill anything on ports again
+echo "🔫 Final port cleanup..."
+fuser -k 8080/tcp 2>/dev/null || true
+fuser -k 3000/tcp 2>/dev/null || true
+fuser -k 3001/tcp 2>/dev/null || true
+fuser -k 3002/tcp 2>/dev/null || true
+fuser -k 3003/tcp 2>/dev/null || true
+
+sleep 3
 echo "✅ Process cleanup completed"
 
 # =============================================
