@@ -1,8 +1,11 @@
 import axios from 'axios';
 
 // Configuração base do axios
+// In production, use full URL; in development, use relative path for Next.js rewrite
+const baseURL = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
+
 const api = axios.create({
-  baseURL: '/api/v1', // Always use relative path for Next.js rewrite
+  baseURL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',

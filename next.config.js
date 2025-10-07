@@ -6,7 +6,8 @@ const nextConfig = {
   },
   async rewrites() {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL
-    if (!apiUrl) return []
+    // Only use rewrites in development, in production use direct API calls
+    if (!apiUrl || process.env.NODE_ENV === 'production') return []
     // Since NEXT_PUBLIC_API_URL already contains /api/v1, just use it directly
     const baseUrl = apiUrl.replace('/api/v1', '')
     return [
