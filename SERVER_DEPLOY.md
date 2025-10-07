@@ -26,11 +26,11 @@ cd amz-web-tools
 
 ### 3. Configurar Variáveis de Ambiente
 ```bash
-# Copiar arquivo de exemplo
-cp .env.example .env
+# Copiar arquivo de servidor (configurado para acesso externo)
+cp env.server .env
 
-# Editar configurações
-nano .env
+# Verificar configurações de rede
+cat .env | grep -E "(CORS|NEXT_PUBLIC|SERVER_HOST|EXTERNAL)"
 ```
 
 ### 4. Inicializar Sistema
@@ -79,13 +79,16 @@ tail -f /d02/logs/*.log
 ### Health Checks
 ```bash
 # Backend
-curl http://localhost:8080/health
+curl http://52.206.225.24:8080/health
 
 # Frontend
-curl http://localhost:3000
+curl http://52.206.225.24:3000
 
 # Status dos processos
 lsof -i :8080 -i :3000
+
+# Teste de acesso externo
+curl -H "Origin: http://52.206.225.24:3000" http://52.206.225.24:8080/health
 ```
 
 ### Debug Commands

@@ -37,7 +37,9 @@ export CGO_ENABLED=1
 
 # Node.js Environment
 export NODE_ENV=production
-export NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
+export NEXT_PUBLIC_API_URL=http://52.206.225.24:8080/api/v1
+export SERVER_HOST=0.0.0.0
+export FRONTEND_HOST=0.0.0.0
 
 # Log environment setup
 echo "✅ Oracle Home: $ORACLE_HOME"
@@ -198,7 +200,7 @@ fi
 # Start Frontend
 echo "🚀 Starting frontend..."
 cd "$BASE"
-nohup node .next/standalone/server.js > "$LOGS/frontend.log" 2>&1 & echo $! > "$PID_DIR/frontend.pid"
+nohup node .next/standalone/server.js --hostname 0.0.0.0 --port 3000 > "$LOGS/frontend.log" 2>&1 & echo $! > "$PID_DIR/frontend.pid"
 sleep 5
 
 # Check if frontend started
@@ -242,9 +244,10 @@ echo -e "${GREEN}🎉 AMZ Web Tools Initialized Successfully!${NC}"
 echo -e "${GREEN}=========================================${NC}"
 echo ""
 echo -e "${BLUE}🌐 Services:${NC}"
-echo -e "   Frontend: http://localhost:3000"
-echo -e "   Backend:  http://localhost:8080"
-echo -e "   Health:   http://localhost:8080/health"
+echo -e "   Frontend: http://52.206.225.24:3000"
+echo -e "   Backend:  http://52.206.225.24:8080"
+echo -e "   Health:   http://52.206.225.24:8080/health"
+echo -e "   API:      http://52.206.225.24:8080/api/v1"
 echo ""
 echo -e "${BLUE}📝 Logs:${NC}"
 echo -e "   Backend:  tail -f $LOGS/backend.log"

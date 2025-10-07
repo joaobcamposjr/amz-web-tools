@@ -173,7 +173,13 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
+	
+	host := os.Getenv("SERVER_HOST")
+	if host == "" {
+		host = "0.0.0.0"
+	}
 
-	log.Printf("Server starting on port %s", port)
-	log.Fatal(r.Run(":" + port))
+	address := host + ":" + port
+	log.Printf("Server starting on %s", address)
+	log.Fatal(r.Run(address))
 }
