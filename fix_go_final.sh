@@ -1,12 +1,12 @@
 #!/bin/bash
-set -euo pipefail
+set -uo pipefail
 
 echo "🔧 FINAL Go dependency fixer..."
 
 # Clean everything
 echo "🧹 Cleaning everything..."
-go clean -modcache
-rm -f go.sum
+go clean -modcache 2>/dev/null || echo "⚠️ Could not clean modcache (permission denied), continuing..."
+rm -f go.sum 2>/dev/null || true
 
 # Create minimal go.mod with replace directive to avoid sonic
 echo "📝 Creating minimal go.mod..."
