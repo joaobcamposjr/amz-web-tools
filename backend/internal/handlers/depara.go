@@ -350,3 +350,5 @@ func (h *Handlers) GetDeParaProducts(c *gin.Context) {
 		},
 	})
 }
+
+

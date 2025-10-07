@@ -101,7 +101,7 @@ func getDefaultOracleLibDir() string {
 		return "/Applications/oracle/client/instantclient_23"
 	}
 	// Default to Linux path (production)
-	return "/opt/oracle/instantclient_21_13"
+	return "/opt/oracle/instantclient_21_7"
 }
 
 func getEnvAsInt(key string, defaultValue int) int {

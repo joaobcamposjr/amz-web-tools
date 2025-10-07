@@ -2,7 +2,7 @@
 set -euo pipefail
 
 BASE="/d02/projects/amz-web-tools"
-LOGS="$BASE/logs"
+LOGS="/d02/logs"
 mkdir -p "$LOGS" /d02/.cache/go-build /d02/go/pkg/mod
 
 echo "🚀 Backend: build"
