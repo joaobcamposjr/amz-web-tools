@@ -147,11 +147,11 @@ echo "✅ Permissions fixed"
 echo -e "${YELLOW}📦 Installing dependencies...${NC}"
 
 # Go dependencies
-echo "📦 Installing Go dependencies..."
-cd "$BASE/backend"
-go mod download
-go mod tidy
-echo "✅ Go dependencies installed"
+echo "🔧 Fixing Go dependencies..."
+cd "$BASE"
+chmod +x fix_go_dependencies.sh
+./fix_go_dependencies.sh
+echo "✅ Go dependencies fixed"
 
 # Node.js dependencies
 echo "📦 Installing Node.js dependencies..."
