@@ -183,6 +183,12 @@ echo "✅ Backend built successfully"
 echo "🔨 Building Next.js frontend..."
 cd "$BASE"
 npm run build
+
+# Copy static files for standalone mode
+echo "📦 Copying static files for standalone mode..."
+cp -r .next/static .next/standalone/.next/static
+cp -r public .next/standalone/public
+echo "✅ Static files copied"
 echo "✅ Frontend built successfully"
 
 # =============================================
