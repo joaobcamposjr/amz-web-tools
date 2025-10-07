@@ -50,8 +50,10 @@ echo "✅ Go Module Cache: $GOMODCACHE"
 # 2. Create Directories
 # =============================================
 echo -e "${YELLOW}📁 Creating directories...${NC}"
-mkdir -p "$LOGS" "$CACHE/go-build" "/d02/go/pkg/mod" "$PID_DIR"
-echo "✅ Directories created"
+sudo mkdir -p "$LOGS" "$CACHE/go-build" "/d02/go/pkg/mod" "$PID_DIR"
+sudo chown -R $USER:$USER "$LOGS" "$CACHE" "/d02/go" "$PID_DIR" 2>/dev/null || true
+sudo chmod -R 755 "$LOGS" "$CACHE" "/d02/go" "$PID_DIR" 2>/dev/null || true
+echo "✅ Directories created with proper permissions"
 
 # =============================================
 # 3. Kill Existing Processes
