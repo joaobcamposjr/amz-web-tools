@@ -29,9 +29,21 @@ require (
 )
 EOF
 
-# Download only what we need
+# Download and force go.sum creation
 echo "📦 Downloading dependencies..."
-go mod download
+cd backend
+go get ./...
+cd ..
+
+# Verify go.sum was created
+if [ -f go.sum ]; then
+    echo "✅ go.sum created successfully"
+else
+    echo "❌ go.sum not created, trying alternative method..."
+    cd backend
+    go list -m all
+    cd ..
+fi
 
 # Try to build
 echo "🔨 Testing build..."
@@ -40,8 +52,8 @@ if go build -o /tmp/test-build .; then
     echo "✅ Build successful!"
     rm /tmp/test-build
 else
-    echo "❌ Build failed, but continuing..."
+    echo "⚠️ Build failed - check errors above"
 fi
 cd ..
 
-echo "✅ Go dependencies fixed!"
+echo "✅ Go dependency fix process completed!"
