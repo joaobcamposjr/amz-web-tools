@@ -20,7 +20,8 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: '/(.*)',
+        // Apply security headers to all pages except static files
+        source: '/:path((?!_next/static|_next/image|favicon.ico).*)',
         headers: [
           {
             key: 'X-Frame-Options',
