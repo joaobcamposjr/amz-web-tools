@@ -82,7 +82,19 @@ func Load() *Config {
 
 		Environment: getEnv("ENVIRONMENT", "development"),
 
-		CORSAllowedOrigins: strings.Split(getEnv("CORS_ALLOWED_ORIGINS", ""), ","),
+		CORSAllowedOrigins: func() []string {
+		origins := strings.Split(getEnv("CORS_ALLOWED_ORIGINS", "*"), ",")
+		var result []string
+		for _, origin := range origins {
+			if strings.TrimSpace(origin) != "" {
+				result = append(result, strings.TrimSpace(origin))
+			}
+		}
+		if len(result) == 0 {
+			return []string{"*"}
+		}
+		return result
+	}(),
 
 		LogLevel: getEnv("LOG_LEVEL", "info"),
 	}
