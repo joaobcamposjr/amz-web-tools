@@ -186,9 +186,25 @@ npm run build
 
 # Copy static files for standalone mode
 echo "📦 Copying static files for standalone mode..."
-cp -r .next/static .next/standalone/.next/static
-cp -r public .next/standalone/public
-echo "✅ Static files copied"
+# Remove old static files if they exist
+rm -rf .next/standalone/.next/static 2>/dev/null || true
+rm -rf .next/standalone/public 2>/dev/null || true
+
+# Copy new static files
+cp -r .next/static .next/standalone/.next/
+mkdir -p .next/standalone/public
+if [ -d public ]; then
+    cp -r public/* .next/standalone/public/ 2>/dev/null || true
+fi
+
+# Verify static files were copied
+if [ -d .next/standalone/.next/static ]; then
+    echo "✅ Static files copied successfully"
+    ls -la .next/standalone/.next/static/ | head -5
+else
+    echo "❌ Failed to copy static files!"
+    exit 1
+fi
 echo "✅ Frontend built successfully"
 
 # =============================================
@@ -214,8 +230,8 @@ fi
 
 # Start Frontend
 echo "🚀 Starting frontend..."
-cd "$BASE"
-HOSTNAME=0.0.0.0 PORT=3000 nohup node .next/standalone/server.js > "$LOGS/frontend.log" 2>&1 & echo $! > "$PID_DIR/frontend.pid"
+cd "$BASE/.next/standalone"
+HOSTNAME=0.0.0.0 PORT=3000 nohup node server.js > "$LOGS/frontend.log" 2>&1 & echo $! > "$PID_DIR/frontend.pid"
 sleep 10
 
 # Check if frontend started
