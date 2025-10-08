@@ -36,6 +36,7 @@ ls -la public/ | head -5
 
 # Start with proper environment
 echo "🚀 Starting with fixed structure..."
+cd /d02/projects/amz-web-tools/.next/standalone
 HOSTNAME=0.0.0.0 PORT=3000 nohup node server.js > /d02/logs/frontend.log 2>&1 &
 
 sleep 5
