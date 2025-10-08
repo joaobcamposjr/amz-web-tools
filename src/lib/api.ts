@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 // Configuração base do axios
-// Always use full backend URL in production
-const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
+// Hardcode the production URL since env vars are not working in standalone
+const baseURL = 'http://52.206.225.24:8080/api/v1';
 
 const api = axios.create({
   baseURL,
