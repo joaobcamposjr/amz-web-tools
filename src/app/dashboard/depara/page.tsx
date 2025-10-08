@@ -75,7 +75,13 @@ export default function DeParaPage() {
   const [selectedProduct, setSelectedProduct] = useState<DeParaProduct | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState({ sku: '', company: '' });
+  const [editForm, setEditForm] = useState({ 
+    sku: '', 
+    company: '',
+    ship_cost_slow: '',
+    ship_cost_standard: '',
+    ship_cost_nextday: ''
+  });
   
   // Create form states
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -193,7 +199,13 @@ export default function DeParaPage() {
 
   const handleProductClick = (product: DeParaProduct) => {
     setSelectedProduct(product);
-    setEditForm({ sku: product.sku, company: product.company });
+    setEditForm({ 
+      sku: product.sku, 
+      company: product.company,
+      ship_cost_slow: product.ship_cost_slow || '',
+      ship_cost_standard: product.ship_cost_standard || '',
+      ship_cost_nextday: product.ship_cost_nextday || ''
+    });
     setIsEditing(false);
     setIsModalOpen(true);
   };
@@ -219,17 +231,34 @@ export default function DeParaPage() {
     try {
       const response = await api.put(`/test/depara/${selectedProduct.id}?table=${getCurrentTableName()}`, {
         sku: editForm.sku.trim(),
-        company: editForm.company.trim()
+        company: editForm.company.trim(),
+        ship_cost_slow: editForm.ship_cost_slow.trim(),
+        ship_cost_standard: editForm.ship_cost_standard.trim(),
+        ship_cost_nextday: editForm.ship_cost_nextday.trim()
       });
       
       if (response.data.success) {
         // Update the product in the list
         setProducts(products.map(p => 
           p.id === selectedProduct.id 
-            ? { ...p, sku: editForm.sku.trim(), company: editForm.company.trim() }
+            ? { 
+                ...p, 
+                sku: editForm.sku.trim(), 
+                company: editForm.company.trim(),
+                ship_cost_slow: editForm.ship_cost_slow.trim(),
+                ship_cost_standard: editForm.ship_cost_standard.trim(),
+                ship_cost_nextday: editForm.ship_cost_nextday.trim()
+              }
             : p
         ));
-        setSelectedProduct({ ...selectedProduct, sku: editForm.sku.trim(), company: editForm.company.trim() });
+        setSelectedProduct({ 
+          ...selectedProduct, 
+          sku: editForm.sku.trim(), 
+          company: editForm.company.trim(),
+          ship_cost_slow: editForm.ship_cost_slow.trim(),
+          ship_cost_standard: editForm.ship_cost_standard.trim(),
+          ship_cost_nextday: editForm.ship_cost_nextday.trim()
+        });
         setIsEditing(false);
         alert('Produto atualizado com sucesso!');
       } else {
@@ -686,7 +715,9 @@ export default function DeParaPage() {
                     value={isEditing ? editForm.sku : selectedProduct.sku}
                     onChange={(e) => setEditForm({ ...editForm, sku: e.target.value })}
                     disabled={!isEditing}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
+                      isEditing ? 'bg-white' : 'bg-gray-50'
+                    }`}
                   />
                 </div>
                 
@@ -717,7 +748,9 @@ export default function DeParaPage() {
                     value={isEditing ? editForm.company : selectedProduct.company}
                     onChange={(e) => setEditForm({ ...editForm, company: e.target.value })}
                     disabled={!isEditing}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
+                      isEditing ? 'bg-white' : 'bg-gray-50'
+                    }`}
                   />
                 </div>
                 
@@ -919,27 +952,36 @@ export default function DeParaPage() {
                       <label className="block text-sm font-medium text-gray-700 mb-1">Frete Lento</label>
                       <input
                         type="text"
-                        value={formatShippingCost(selectedProduct.ship_cost_slow)}
-                        disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm"
+                        value={isEditing ? editForm.ship_cost_slow : formatShippingCost(selectedProduct.ship_cost_slow)}
+                        onChange={(e) => setEditForm({ ...editForm, ship_cost_slow: e.target.value })}
+                        disabled={!isEditing}
+                        className={`w-full px-3 py-2 border border-gray-300 rounded-md text-sm ${
+                          isEditing ? 'bg-white' : 'bg-gray-50'
+                        }`}
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Frete Normal</label>
                       <input
                         type="text"
-                        value={formatShippingCost(selectedProduct.ship_cost_standard)}
-                        disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm"
+                        value={isEditing ? editForm.ship_cost_standard : formatShippingCost(selectedProduct.ship_cost_standard)}
+                        onChange={(e) => setEditForm({ ...editForm, ship_cost_standard: e.target.value })}
+                        disabled={!isEditing}
+                        className={`w-full px-3 py-2 border border-gray-300 rounded-md text-sm ${
+                          isEditing ? 'bg-white' : 'bg-gray-50'
+                        }`}
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Frete Rápido</label>
                       <input
                         type="text"
-                        value={formatShippingCost(selectedProduct.ship_cost_nextday)}
-                        disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm"
+                        value={isEditing ? editForm.ship_cost_nextday : formatShippingCost(selectedProduct.ship_cost_nextday)}
+                        onChange={(e) => setEditForm({ ...editForm, ship_cost_nextday: e.target.value })}
+                        disabled={!isEditing}
+                        className={`w-full px-3 py-2 border border-gray-300 rounded-md text-sm ${
+                          isEditing ? 'bg-white' : 'bg-gray-50'
+                        }`}
                       />
                     </div>
                   </div>
