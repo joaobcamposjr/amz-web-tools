@@ -22,3 +22,4 @@ cd .next/standalone
 HOSTNAME=0.0.0.0 PORT=3000 nohup node server.js > /d02/logs/frontend.log 2>&1 &
 
 echo "✅ DONE! Frontend should now call: http://52.206.225.24:8080/api/v1"
+

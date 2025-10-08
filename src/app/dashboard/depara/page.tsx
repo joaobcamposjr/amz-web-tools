@@ -199,12 +199,12 @@ export default function DeParaPage() {
 
   const handleProductClick = (product: DeParaProduct) => {
     setSelectedProduct(product);
-    setEditForm({ 
-      sku: product.sku, 
+    setEditForm({
+      sku: product.sku,
       company: product.company,
-      ship_cost_slow: product.ship_cost_slow || '',
-      ship_cost_standard: product.ship_cost_standard || '',
-      ship_cost_nextday: product.ship_cost_nextday || ''
+      ship_cost_slow: String(product.ship_cost_slow || ''),
+      ship_cost_standard: String(product.ship_cost_standard || ''),
+      ship_cost_nextday: String(product.ship_cost_nextday || '')
     });
     setIsEditing(false);
     setIsModalOpen(true);

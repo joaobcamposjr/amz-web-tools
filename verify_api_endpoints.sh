@@ -45,3 +45,4 @@ echo ""
 echo "✅ All endpoints should be accessible at port 8080!"
 echo "🎯 Frontend will now call ALL endpoints at: $BASE_URL"
 
+

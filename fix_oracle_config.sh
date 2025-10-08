@@ -36,3 +36,4 @@ echo ""
 echo "🔍 Testing Oracle connection..."
 sleep 2
 tail -10 /d02/logs/backend.log | grep -i oracle || echo "No Oracle logs yet"
+

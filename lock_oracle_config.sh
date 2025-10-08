@@ -97,3 +97,4 @@ tail -15 /d02/logs/backend.log | grep -E "(Oracle|Config|Host)"
 
 echo ""
 echo "🎯 Now test Stock search - Oracle should connect to 164.152.40.38!"
+

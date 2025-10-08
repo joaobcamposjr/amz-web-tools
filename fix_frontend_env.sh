@@ -61,3 +61,4 @@ else
     echo "❌ Frontend failed to start. Check logs:"
     tail -10 /d02/logs/frontend.log
 fi
+

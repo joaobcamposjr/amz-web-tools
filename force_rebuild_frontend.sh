@@ -43,3 +43,4 @@ echo ""
 echo "📋 Check logs:"
 echo "tail -f /d02/logs/frontend.log"
 
+

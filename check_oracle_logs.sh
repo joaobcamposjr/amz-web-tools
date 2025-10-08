@@ -22,3 +22,4 @@ echo ""
 echo "🔍 Current Oracle configuration:"
 echo "================================"
 grep -i "ORACLE" .env 2>/dev/null || echo "No Oracle config found in .env"
+

@@ -37,3 +37,4 @@ echo ""
 echo "🔍 Checking build logs:"
 echo "Last 10 lines of build output:"
 tail -10 /d02/logs/frontend.log 2>/dev/null || echo "No frontend logs found"
+

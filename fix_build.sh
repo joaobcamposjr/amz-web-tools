@@ -60,3 +60,4 @@ else
     echo "🔍 Available in .next:"
     ls -la .next/
 fi
+

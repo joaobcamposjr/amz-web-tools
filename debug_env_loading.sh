@@ -39,3 +39,4 @@ if [ -f ".env" ]; then
 else
     echo "❌ .env file not found or not accessible"
 fi
+

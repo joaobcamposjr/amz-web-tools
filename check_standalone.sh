@@ -32,3 +32,4 @@ echo ""
 echo "📄 Checking frontend logs:"
 tail -50 /d02/logs/frontend.log
 
+

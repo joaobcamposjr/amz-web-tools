@@ -53,3 +53,4 @@ tail -15 /d02/logs/backend.log | grep -E "(Loaded .env|Config loaded|Oracle)"
 
 echo ""
 echo "🎯 Now test Stock search to see if Oracle connects!"
+

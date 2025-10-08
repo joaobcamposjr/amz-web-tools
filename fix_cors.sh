@@ -20,3 +20,4 @@ echo "   cd /d02/projects/amz-web-tools"
 echo "   pkill -f backend"
 echo "   nohup ./bin/backend > /d02/logs/backend.log 2>&1 & echo \$! > /d02/pids/backend.pid"
 
+

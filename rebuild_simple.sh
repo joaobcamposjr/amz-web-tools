@@ -23,3 +23,4 @@ cd .next/standalone
 HOSTNAME=0.0.0.0 PORT=3000 nohup node server.js > /d02/logs/frontend.log 2>&1 &
 
 echo "✅ Frontend rebuilt and started!"
+

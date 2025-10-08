@@ -89,3 +89,4 @@ tail -10 /d02/logs/backend.log | grep -i oracle || echo "No Oracle logs yet"
 
 echo ""
 echo "🎯 Now test Stock search to see if Oracle connects!"
+

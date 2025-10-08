@@ -45,3 +45,4 @@ echo "✅ Log file created: $LOG_FILE"
 echo "📋 Copy and paste the content below:"
 echo "===================================="
 cat $LOG_FILE
+
