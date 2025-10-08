@@ -96,15 +96,15 @@ export default function UsersPage() {
       const token = localStorage.getItem('token');
       const response = await api.post('/users', createForm);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create user');
+      const data = response.data;
+      if (data.success) {
+        setSuccess('Usuário criado com sucesso!');
+        setShowCreateModal(false);
+        setCreateForm({ email: '', password: '', name: '', department: '', role: 'atendimento' });
+        fetchUsers();
+      } else {
+        throw new Error(data.message || 'Failed to create user');
       }
-
-      setSuccess('Usuário criado com sucesso!');
-      setShowCreateModal(false);
-      setCreateForm({ email: '', password: '', name: '', department: '', role: 'atendimento' });
-      fetchUsers();
     } catch (err: any) {
       setError(err.message);
     }
@@ -119,12 +119,12 @@ export default function UsersPage() {
       const token = localStorage.getItem('token');
       const response = await api.put(`/users/${userId}`, editForm);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update user');
+      const data = response.data;
+      if (data.success) {
+        setSuccess('Usuário atualizado com sucesso!');
+      } else {
+        throw new Error(data.message || 'Failed to update user');
       }
-
-      setSuccess('Usuário atualizado com sucesso!');
       setShowEditModal(false);
       setSelectedUser(null);
       fetchUsers();
@@ -142,12 +142,12 @@ export default function UsersPage() {
       const token = localStorage.getItem('token');
       const response = await api.post('/users/reset-password', resetForm);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to reset password');
+      const data = response.data;
+      if (data.success) {
+        setSuccess('Senha redefinida com sucesso!');
+      } else {
+        throw new Error(data.message || 'Failed to reset password');
       }
-
-      setSuccess('Senha redefinida com sucesso!');
       setShowResetModal(false);
       setResetForm({ user_id: '', password: '' });
     } catch (err: any) {
@@ -164,12 +164,12 @@ export default function UsersPage() {
       const token = localStorage.getItem('token');
       const response = await api.delete(`/users/${userId}`);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to delete user');
+      const data = response.data;
+      if (data.success) {
+        setSuccess('Usuário excluído com sucesso!');
+      } else {
+        throw new Error(data.message || 'Failed to delete user');
       }
-
-      setSuccess('Usuário excluído com sucesso!');
       fetchUsers();
     } catch (err: any) {
       setError(err.message);
