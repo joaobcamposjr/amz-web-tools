@@ -199,12 +199,25 @@ export default function DeParaPage() {
 
   const handleProductClick = (product: DeParaProduct) => {
     setSelectedProduct(product);
+    
+    // Função auxiliar para extrair valor numérico
+    const getNumericValue = (value: any): string => {
+      if (!value) return '0';
+      if (typeof value === 'object' && value.Valid && typeof value.Float64 === 'number') {
+        return value.Float64.toString();
+      }
+      if (typeof value === 'number') {
+        return value.toString();
+      }
+      return '0';
+    };
+    
     setEditForm({
       sku: product.sku,
       company: product.company,
-      ship_cost_slow: String(product.ship_cost_slow || ''),
-      ship_cost_standard: String(product.ship_cost_standard || ''),
-      ship_cost_nextday: String(product.ship_cost_nextday || '')
+      ship_cost_slow: getNumericValue(product.ship_cost_slow),
+      ship_cost_standard: getNumericValue(product.ship_cost_standard),
+      ship_cost_nextday: getNumericValue(product.ship_cost_nextday)
     });
     setIsEditing(false);
     setIsModalOpen(true);
