@@ -18,8 +18,13 @@ import (
 func main() {
 	// Load environment variables from project root
 	if err := godotenv.Load("../.env"); err != nil {
-		log.Printf("No .env file found at ../.env: %v", err)
-		log.Println("Using system environment variables")
+		// Try current directory
+		if err2 := godotenv.Load(".env"); err2 != nil {
+			log.Printf("No .env file found at ../.env or .env: %v, %v", err, err2)
+			log.Println("Using system environment variables")
+		} else {
+			log.Println("✅ Loaded .env file from current directory")
+		}
 	} else {
 		log.Println("✅ Loaded .env file from project root")
 	}
