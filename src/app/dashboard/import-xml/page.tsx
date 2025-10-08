@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Play, CheckCircle, XCircle, Clock, AlertCircle } from 'lucide-react';
 import WebSocketLogs from '@/components/WebSocketLogs';
+import api from '@/lib/api';
 
 interface XMLIntegrationResult {
   total_processed: number;
@@ -43,20 +44,13 @@ export default function ImportXMLPage() {
     setCurrentProcessId(numPedido.trim());
 
     try {
-      const response = await fetch('/api/v1/xml-integrator/process', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify({
-          num_pedido: numPedido.trim(),
-        }),
+      const response = await api.post('/xml-integrator/process', {
+        num_pedido: numPedido.trim(),
       });
 
-      const data = await response.json();
+      const data = response.data;
 
-      if (response.ok) {
+      if (data.success) {
         setResult(data.data);
         console.log('🔍 API Response data:', data);
         console.log('🔍 API Response data.data:', data.data);

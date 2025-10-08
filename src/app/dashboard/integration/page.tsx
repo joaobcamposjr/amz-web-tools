@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import WebSocketLogs from '@/components/WebSocketLogs';
+import api from '@/lib/api';
 
 interface IntegrationRequest {
   conta: string;
@@ -70,18 +71,11 @@ export default function IntegrationPage() {
     setCurrentProcessId(`integration_${Date.now()}`);
 
     try {
-      const response = await fetch('/api/v1/integration/execute', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify(formData),
-      });
+      const response = await api.post('/integration/execute', formData);
 
-      const data = await response.json();
+      const data = response.data;
 
-      if (response.ok) {
+      if (data.success) {
         setResult(data.data);
         console.log('🔍 API Response data:', data);
         console.log('🔍 API Response data.data:', data.data);

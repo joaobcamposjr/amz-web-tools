@@ -117,14 +117,7 @@ export default function UsersPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/v1/users', {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(editForm)
-      });
+      const response = await api.put(`/users/${userId}`, editForm);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -147,14 +140,7 @@ export default function UsersPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/v1/users/reset-password', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(resetForm)
-      });
+      const response = await api.post('/users/reset-password', resetForm);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -176,13 +162,7 @@ export default function UsersPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/v1/users/${userId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await api.delete(`/users/${userId}`);
 
       if (!response.ok) {
         const errorData = await response.json();
