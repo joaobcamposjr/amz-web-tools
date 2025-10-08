@@ -245,9 +245,9 @@ export default function DeParaPage() {
                 ...p, 
                 sku: editForm.sku.trim(), 
                 company: editForm.company.trim(),
-                ship_cost_slow: editForm.ship_cost_slow.trim(),
-                ship_cost_standard: editForm.ship_cost_standard.trim(),
-                ship_cost_nextday: editForm.ship_cost_nextday.trim()
+                ship_cost_slow: parseFloat(editForm.ship_cost_slow) || 0,
+                ship_cost_standard: parseFloat(editForm.ship_cost_standard) || 0,
+                ship_cost_nextday: parseFloat(editForm.ship_cost_nextday) || 0
               }
             : p
         ));
@@ -255,9 +255,9 @@ export default function DeParaPage() {
           ...selectedProduct, 
           sku: editForm.sku.trim(), 
           company: editForm.company.trim(),
-          ship_cost_slow: editForm.ship_cost_slow.trim(),
-          ship_cost_standard: editForm.ship_cost_standard.trim(),
-          ship_cost_nextday: editForm.ship_cost_nextday.trim()
+          ship_cost_slow: parseFloat(editForm.ship_cost_slow) || 0,
+          ship_cost_standard: parseFloat(editForm.ship_cost_standard) || 0,
+          ship_cost_nextday: parseFloat(editForm.ship_cost_nextday) || 0
         });
         setIsEditing(false);
         alert('Produto atualizado com sucesso!');
