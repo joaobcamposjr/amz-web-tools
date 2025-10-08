@@ -37,7 +37,7 @@ echo -e "${YELLOW}🔍 Testing Oracle Connection...${NC}"
 if [ -n "${ORACLE_HOST:-}" ] && [ -n "${ORACLE_USER:-}" ]; then
     # Set Oracle environment
     export ORACLE_HOME="${ORACLE_LIB_DIR:-/opt/oracle/instantclient_21_7}"
-    export LD_LIBRARY_PATH="${ORACLE_LIB_DIR:-/opt/oracle/instantclient_21_7}:$LD_LIBRARY_PATH"
+    export LD_LIBRARY_PATH="${ORACLE_LIB_DIR:-/opt/oracle/instantclient_21_7}:${LD_LIBRARY_PATH:-}"
     
     echo "Oracle DSN: oracle://${ORACLE_USER}:****@${ORACLE_HOST}:${ORACLE_PORT:-1521}/${ORACLE_SERVICE}"
     
