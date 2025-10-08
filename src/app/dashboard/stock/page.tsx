@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import axios from 'axios';
+import api from '@/lib/api';
 
 interface StockItem {
   cod_empresa: number;
@@ -44,7 +44,7 @@ export default function StockPage() {
     setStockData(null);
 
     try {
-      const response = await axios.post<StockResponse>('/api/v1/test/stock/search', {
+      const response = await api.post<StockResponse>('/test/stock/search', {
         sku: sku.trim()
       });
 

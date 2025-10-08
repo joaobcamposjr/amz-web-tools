@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Plus, Eye, Edit, Trash2, Check, X } from 'lucide-react';
 import ImageSlider from '@/components/ImageSlider';
-import axios from 'axios';
+import api from '@/lib/api';
 
 interface DeParaProduct {
   id: string;
@@ -89,7 +89,7 @@ export default function DeParaPage() {
 
   const loadTables = async () => {
     try {
-      const response = await axios.get('/api/v1/test/depara/tables');
+      const response = await api.get('/test/depara/tables');
       if (response.data.success) {
         setTables(response.data.data);
       }
@@ -100,7 +100,7 @@ export default function DeParaPage() {
 
   const loadTableOptions = async () => {
     try {
-      const response = await axios.get('/api/v1/test/depara/options');
+      const response = await api.get('/test/depara/options');
       if (response.data.success) {
         setTableOptions(response.data.data);
       }
@@ -145,7 +145,7 @@ export default function DeParaPage() {
     
     try {
       const searchType = detectSearchType(searchQuery);
-      const response = await axios.post(`/api/v1/test/depara/search`, {
+      const response = await api.post(`/test/depara/search`, {
         table_name: getCurrentTableName(),
         query: searchQuery.trim(),
         search_by: searchType
@@ -217,7 +217,7 @@ export default function DeParaPage() {
     }
     
     try {
-      const response = await axios.put(`/api/v1/test/depara/${selectedProduct.id}?table=${getCurrentTableName()}`, {
+      const response = await api.put(`/test/depara/${selectedProduct.id}?table=${getCurrentTableName()}`, {
         sku: editForm.sku.trim(),
         company: editForm.company.trim()
       });
@@ -249,7 +249,7 @@ export default function DeParaPage() {
     }
     
     try {
-      const response = await axios.delete(`/api/v1/test/depara/${selectedProduct.id}?table=${getCurrentTableName()}`);
+      const response = await api.delete(`/test/depara/${selectedProduct.id}?table=${getCurrentTableName()}`);
       
       if (response.data.success) {
         setProducts(products.filter(p => p.id !== selectedProduct.id));
@@ -294,7 +294,7 @@ export default function DeParaPage() {
     }
     
     try {
-      const response = await axios.post('/api/v1/test/depara', {
+      const response = await api.post('/test/depara', {
         table_name: getCurrentTableName(),
         id: createForm.id.trim(),
         sku: createForm.sku.trim(),
