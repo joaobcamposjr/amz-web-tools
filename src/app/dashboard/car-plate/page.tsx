@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Car, Search, Clock, CheckCircle, AlertCircle, Database, Globe } from 'lucide-react'
 import JsonRenderer from '@/components/JsonRenderer'
+import api from '@/lib/api'
 
 export default function CarPlatePage() {
   const [plate, setPlate] = useState('')
@@ -24,18 +25,13 @@ export default function CarPlatePage() {
     setHistoryLoading(true)
     try {
       console.log('🔄 Loading search history...')
-      const response = await fetch('/api/v1/car-plate/history', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      })
-      const data = await response.json()
-      console.log('📊 History response:', data)
-      if (data.success) {
-        setSearchHistory(data.data.history || [])
-        console.log('✅ History loaded:', data.data.history?.length || 0, 'items')
+      const response = await api.get('/car-plate/history')
+      console.log('📊 History response:', response.data)
+      if (response.data.success) {
+        setSearchHistory(response.data.data.history || [])
+        console.log('✅ History loaded:', response.data.data.history?.length || 0, 'items')
       } else {
-        console.error('❌ History load failed:', data.message)
+        console.error('❌ History load failed:', response.data.message)
       }
     } catch (error) {
       console.error('❌ Error loading search history:', error)
@@ -53,19 +49,13 @@ export default function CarPlatePage() {
     setResult(null)
 
     try {
-      const response = await fetch(`/api/v1/car-plate/${plate.toUpperCase()}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      })
+      const response = await api.get(`/car-plate/${plate.toUpperCase()}`)
 
-      const data = await response.json()
-
-      if (data.success) {
-        setResult(data.data.plate_data)
-        setSource(data.data.source) // 'cache' or 'api'
-        setChassi(data.data.chassi || null) // Extract chassi if available
-        setBrandLogo(data.data.brand_logo || null) // Extract brand logo if available
+      if (response.data.success) {
+        setResult(response.data.data.plate_data)
+        setSource(response.data.data.source) // 'cache' or 'api'
+        setChassi(response.data.data.chassi || null) // Extract chassi if available
+        setBrandLogo(response.data.data.brand_logo || null) // Extract brand logo if available
         setError('')
         console.log('✅ Search successful, reloading history...')
         // Reload search history to get real data

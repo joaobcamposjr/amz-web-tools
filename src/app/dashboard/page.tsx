@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Car, Database, Upload, Package, TrendingUp, Activity, Users, FileText } from 'lucide-react';
+import api from '@/lib/api';
 
 interface DashboardStats {
   car_plate_queries: number;
@@ -21,20 +22,8 @@ export default function DashboardPage() {
 
   const fetchDashboardStats = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/v1/dashboard/stats', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch dashboard stats');
-      }
-
-      const data = await response.json();
-      setStats(data.data);
+      const response = await api.get('/dashboard/stats');
+      setStats(response.data.data);
     } catch (err) {
       setError('Erro ao carregar estatísticas do dashboard');
       console.error('Error fetching dashboard stats:', err);
