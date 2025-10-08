@@ -117,7 +117,7 @@ export default function UsersPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await api.put(`/users/${userId}`, editForm);
+      const response = await api.put(`/users/${selectedUser?.id}`, editForm);
 
       const data = response.data;
       if (data.success) {
