@@ -61,7 +61,7 @@ export default function CarPlatePage() {
         // Reload search history to get real data
         loadSearchHistory()
       } else {
-        setError(data.message || 'Erro ao consultar placa')
+        setError(response.data.message || 'Erro ao consultar placa')
         setResult(null)
         setSource(null)
         setChassi(null)
