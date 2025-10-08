@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 // Configuração base do axios
-// In production, use full URL; in development, use relative path for Next.js rewrite
-const baseURL = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
+// Always use full backend URL in production
+const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
 
 const api = axios.create({
   baseURL,
