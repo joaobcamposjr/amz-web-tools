@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import api from '@/lib/api';
 
 interface User {
   id: string;
@@ -74,18 +75,9 @@ export default function UsersPage() {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/v1/users', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await api.get('/users');
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch users');
-      }
-
-      const data = await response.json();
+      const data = response.data;
       setUsers(data.data);
     } catch (err) {
       setError('Erro ao carregar usuários');
@@ -102,14 +94,7 @@ export default function UsersPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/v1/users', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(createForm)
-      });
+      const response = await api.post('/users', createForm);
 
       if (!response.ok) {
         const errorData = await response.json();
