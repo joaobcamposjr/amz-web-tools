@@ -1088,7 +1088,9 @@ func (s *IntegrationService) getCodigoFornecedor(codEmpresa string, hasDepara bo
 	case "41":
 		return "11", "41"
 	case "47":
-		return "17", "47"
+		return "17", "147"
+	case "147":
+		return "17", "147"
 	case "140":
 		return "1", "140"
 	case "LUCIOS":
@@ -1567,6 +1569,139 @@ func (s *IntegrationService) processItemsAndSendOrder(numPedido string, order *M
 
 		log.Printf("✅ SKU encontrado para MLB %s: %s", mlbItem, sku)
 
+		// VALIDAR ESTOQUE NO ORACLE (como no Python linha 808-926)
+		if s.oracleDB != nil {
+			log.Printf("🔍 Verificando estoque para SKU: %s, Fornecedor: %s, Empresa: %s", sku, codFornecedor, codEmpresa)
+			
+			// Determinar empresa para consulta
+			empresa := codEmpresa
+			if codEmpresa == "LUCIOS" || codEmpresa == "OUTROS" {
+				empresa = "17"
+			}
+
+			cleanSKU := strings.ToUpper(strings.Replace(sku, "LC", "", -1))
+
+			// Query de estoque principal (baseada no Python linha 808-824)
+			queryEstoque := `
+				SELECT DISTINCT
+					e.cod_fornecedor,
+					e.cod_item,
+					AVG(e.valor_reposicao) as valor_reposicao,
+					e.ESTOQUE - e.RESERVADO as ESTOQUE_DISPONIVEL
+				FROM nbs.CRANI_PECAS_ITENS e
+				WHERE
+					e.cod_empresa IN (1,3,17,31,34,35,40,41,43,144,45,47,48,140,147)
+					AND e.cod_item = :1
+					AND e.cod_fornecedor = :2
+					AND e.cod_empresa = :3
+				GROUP BY
+					e.cod_fornecedor,
+					e.cod_item,
+					e.ESTOQUE - e.RESERVADO
+			`
+
+			rowsEstoque, err := s.oracleDB.Query(queryEstoque, cleanSKU, codFornecedor, empresa)
+			if err != nil {
+				log.Printf("❌ Erro ao consultar estoque Oracle: %v", err)
+				return "", fmt.Errorf("erro ao verificar estoque para SKU %s: %v", sku, err)
+			}
+
+			var estoqueDisponivel int
+			var codFornEstoque, codItemEstoque string
+			var valorReposicao float64
+			hasEstoque := false
+
+			if rowsEstoque.Next() {
+				err := rowsEstoque.Scan(&codFornEstoque, &codItemEstoque, &valorReposicao, &estoqueDisponivel)
+				if err != nil {
+					log.Printf("❌ Erro ao ler dados de estoque: %v", err)
+					rowsEstoque.Close()
+					return "", fmt.Errorf("erro ao ler estoque para SKU %s: %v", sku, err)
+				}
+				hasEstoque = true
+			}
+			rowsEstoque.Close()
+
+			// REGRAS DE FALLBACK (Python linha 828-926)
+			// Se não encontrou OU fornecedor 17 sem estoque -> tenta fornecedor 16
+			if (!hasEstoque && codFornecedor == "17") || (hasEstoque && codFornEstoque == "17" && estoqueDisponivel == 0) {
+				log.Printf("🔄 Tentando fornecedor 16 como fallback para SKU: %s", sku)
+				queryFallback := `
+					SELECT DISTINCT
+						e.cod_fornecedor,
+						e.cod_item,
+						AVG(e.valor_reposicao) as valor_reposicao,
+						e.ESTOQUE - e.RESERVADO as ESTOQUE_DISPONIVEL
+					FROM nbs.CRANI_PECAS_ITENS e
+					WHERE
+						e.cod_empresa IN (1,3,17,31,34,35,40,41,43,144,45,47,48,140,147)
+						AND e.cod_item = :1
+						AND e.cod_fornecedor = 16
+						AND e.cod_empresa = :2
+					GROUP BY
+						e.cod_fornecedor,
+						e.cod_item,
+						e.ESTOQUE - e.RESERVADO
+				`
+				rowsFallback, err := s.oracleDB.Query(queryFallback, cleanSKU, empresa)
+				if err == nil && rowsFallback.Next() {
+					rowsFallback.Scan(&codFornEstoque, &codItemEstoque, &valorReposicao, &estoqueDisponivel)
+					hasEstoque = true
+					log.Printf("✅ Encontrado no fornecedor 16: estoque=%d", estoqueDisponivel)
+				}
+				if rowsFallback != nil {
+					rowsFallback.Close()
+				}
+			}
+
+			// Se fornecedor 8 sem estoque -> tenta fornecedor 12 (Python linha 888-916)
+			if hasEstoque && codFornEstoque == "8" && estoqueDisponivel == 0 {
+				log.Printf("🔄 Tentando fornecedor 12 como fallback para SKU: %s", sku)
+				queryFallback := `
+					SELECT DISTINCT
+						e.cod_fornecedor,
+						e.cod_item,
+						AVG(e.valor_reposicao) as valor_reposicao,
+						e.ESTOQUE - e.RESERVADO as ESTOQUE_DISPONIVEL
+					FROM nbs.CRANI_PECAS_ITENS e
+					WHERE
+						e.cod_empresa IN (1,3,17,31,34,35,40,41,43,144,45,47,48,140,147)
+						AND e.cod_item = :1
+						AND e.cod_fornecedor = 12
+						AND e.cod_empresa = 17
+					GROUP BY
+						e.cod_fornecedor,
+						e.cod_item,
+						e.ESTOQUE - e.RESERVADO
+				`
+				rowsFallback, err := s.oracleDB.Query(queryFallback, cleanSKU)
+				if err == nil && rowsFallback.Next() {
+					rowsFallback.Scan(&codFornEstoque, &codItemEstoque, &valorReposicao, &estoqueDisponivel)
+					hasEstoque = true
+					log.Printf("✅ Encontrado no fornecedor 12: estoque=%d", estoqueDisponivel)
+				}
+				if rowsFallback != nil {
+					rowsFallback.Close()
+				}
+			}
+
+			// Validar estoque disponível final (como Python linha 935-957)
+			if !hasEstoque || estoqueDisponivel <= 0 {
+				msgErro := ""
+				if codEmpresa == "LUCIOS" {
+					msgErro = fmt.Sprintf("Item LUCIOS: %s fazer pedido da peça!", sku)
+				} else {
+					msgErro = fmt.Sprintf("Item %s peça insuficiente em estoque!", sku)
+				}
+				log.Printf("⚠️ SEM ESTOQUE: %s", msgErro)
+				return "", fmt.Errorf("sem estoque disponível: %s", msgErro)
+			}
+
+			log.Printf("✅ Estoque disponível: %d unidades para SKU: %s (Fornecedor: %s)", estoqueDisponivel, sku, codFornEstoque)
+		} else {
+			log.Printf("⚠️ Oracle não disponível - pulando validação de estoque")
+		}
+
 		// Calcular valores
 		valorUnitario := item.UnitPrice
 		quantidade := item.Quantity
@@ -1751,6 +1886,8 @@ func (s *IntegrationService) getSchemaFromCodEmpresa(codEmpresa string) string {
 	case "41":
 		return "renault"
 	case "47":
+		return "renault"
+	case "147":
 		return "renault"
 	case "140":
 		return "ford"
