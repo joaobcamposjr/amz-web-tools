@@ -85,7 +85,14 @@ export default function DeParaPage() {
   
   // Create form states
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [createForm, setCreateForm] = useState({ id: '', sku: '', company: '', mlbu: '', type: '' });
+  const [createForm, setCreateForm] = useState({ 
+    empresa: 'amazonas', 
+    conta: 'psa', 
+    marketplace: 'mercadolivre',
+    id: '', 
+    sku: '', 
+    company: ''
+  });
 
   // Load available tables and options on component mount
   useEffect(() => {
@@ -336,18 +343,28 @@ export default function DeParaPage() {
     }
     
     try {
+      // Construir nome da tabela baseado nos campos selecionados
+      const tableName = `integration.${createForm.empresa}_${createForm.conta}.${createForm.marketplace}_base`;
+      
       const response = await api.post('/test/depara', {
-        table_name: getCurrentTableName(),
+        table_name: tableName,
         id: createForm.id.trim(),
         sku: createForm.sku.trim(),
         company: createForm.company.trim(),
-        mlbu: createForm.mlbu.trim() || createForm.id.trim(),
-        type: createForm.type.trim() || 'product'
+        mlbu: createForm.id.trim(), // Usar ID como MLBU padrão
+        type: 'product' // Valor padrão fixo
       });
       
       if (response.data.success) {
         setShowCreateForm(false);
-        setCreateForm({ id: '', sku: '', company: '', mlbu: '', type: '' });
+        setCreateForm({ 
+          empresa: 'amazonas', 
+          conta: 'psa', 
+          marketplace: 'mercadolivre',
+          id: '', 
+          sku: '', 
+          company: ''
+        });
         alert('Produto criado com sucesso!');
         // Optionally refresh the search
         if (searchQuery) {
@@ -607,6 +624,81 @@ export default function DeParaPage() {
             <h3 className="text-lg font-semibold mb-4">Adicionar Novo Produto</h3>
             
             <div className="space-y-4">
+              {/* Configuração da Tabela */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Configuração da Tabela
+                </label>
+                <div className="grid grid-cols-1 gap-3">
+                  {/* Empresa */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Empresa
+                    </label>
+                    <select
+                      value={createForm.empresa}
+                      onChange={(e) => setCreateForm({ ...createForm, empresa: e.target.value })}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {tableOptions.empresa.length > 0 ? (
+                        tableOptions.empresa.map((empresa) => (
+                          <option key={empresa} value={empresa}>
+                            {empresa}
+                          </option>
+                        ))
+                      ) : (
+                        <option value="">Carregando...</option>
+                      )}
+                    </select>
+                  </div>
+                  
+                  {/* Conta */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Conta
+                    </label>
+                    <select
+                      value={createForm.conta}
+                      onChange={(e) => setCreateForm({ ...createForm, conta: e.target.value })}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {tableOptions.conta.length > 0 ? (
+                        tableOptions.conta.map((conta) => (
+                          <option key={conta} value={conta}>
+                            {conta}
+                          </option>
+                        ))
+                      ) : (
+                        <option value="">Carregando...</option>
+                      )}
+                    </select>
+                  </div>
+                  
+                  {/* Marketplace */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Marketplace
+                    </label>
+                    <select
+                      value={createForm.marketplace}
+                      onChange={(e) => setCreateForm({ ...createForm, marketplace: e.target.value })}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {tableOptions.marketplace.length > 0 ? (
+                        tableOptions.marketplace.map((marketplace) => (
+                          <option key={marketplace} value={marketplace}>
+                            {marketplace}
+                          </option>
+                        ))
+                      ) : (
+                        <option value="">Carregando...</option>
+                      )}
+                    </select>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Campos de Produto */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   ID * (obrigatório)
@@ -643,32 +735,6 @@ export default function DeParaPage() {
                   onChange={(e) => setCreateForm({ ...createForm, company: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Ex: Amazonas"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  MLBU (opcional)
-                </label>
-                <input
-                  type="text"
-                  value={createForm.mlbu}
-                  onChange={(e) => setCreateForm({ ...createForm, mlbu: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Deixe vazio para usar o ID"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Type (opcional)
-                </label>
-                <input
-                  type="text"
-                  value={createForm.type}
-                  onChange={(e) => setCreateForm({ ...createForm, type: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Padrão: product"
                 />
               </div>
             </div>
