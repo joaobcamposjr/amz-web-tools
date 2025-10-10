@@ -1572,7 +1572,7 @@ func (s *IntegrationService) processItemsAndSendOrder(numPedido string, order *M
 		// VALIDAR ESTOQUE NO ORACLE (como no Python linha 808-926)
 		if s.oracleDB != nil {
 			log.Printf("🔍 Verificando estoque para SKU: %s, Fornecedor: %s, Empresa: %s", sku, codFornecedor, codEmpresa)
-			
+
 			// Determinar empresa para consulta
 			empresa := codEmpresa
 			if codEmpresa == "LUCIOS" || codEmpresa == "OUTROS" {
