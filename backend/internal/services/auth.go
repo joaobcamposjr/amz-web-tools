@@ -3,8 +3,10 @@ package services
 import (
 	"database/sql"
 	"fmt"
+	"os"
 	"time"
 
+	"amz-web-tools/backend/internal/config"
 	"amz-web-tools/backend/internal/models"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -17,12 +19,33 @@ type AuthService struct {
 	usersDB *sql.DB
 }
 
-func NewAuthService(db *sql.DB) *AuthService {
-	// Criar conexão específica para usuários no banco portal
-	usersDB, err := sql.Open("sqlserver", "server=54.204.42.134;user id=sa;password=321@Mudar@7089341@;database=portal;encrypt=disable")
+func NewAuthService(db *sql.DB, cfg *config.Config) *AuthService {
+	// Obter nome do banco de usuários (default: portal)
+	usersDBName := os.Getenv("USERS_DB_NAME")
+	if usersDBName == "" {
+		usersDBName = "portal"
+	}
+
+	// Construir connection string usando as variáveis de ambiente
+	connectionString := fmt.Sprintf("server=%s;port=%s;user id=%s;password=%s;database=%s;encrypt=disable;trustServerCertificate=true;connection timeout=30",
+		cfg.DBHost,
+		cfg.DBPort,
+		cfg.DBUser,
+		cfg.DBPassword,
+		usersDBName,
+	)
+
+	// Criar conexão específica para usuários
+	usersDB, err := sql.Open("sqlserver", connectionString)
 	if err != nil {
-		// Se não conseguir conectar no portal, usar o banco principal
+		// Se não conseguir conectar no banco de usuários, usar o banco principal
 		usersDB = db
+	} else {
+		// Testar conexão
+		if err := usersDB.Ping(); err != nil {
+			// Se não conseguir fazer ping, usar o banco principal
+			usersDB = db
+		}
 	}
 
 	return &AuthService{

@@ -112,7 +112,8 @@ func (s *StockService) SearchStock(sku string) ([]models.StockItem, error) {
 		LEFT JOIN nbs.EMPRESAS em
 		ON e.COD_EMPRESA = em.COD_EMPRESA 
 		WHERE
-			e.cod_empresa IN (1,3,17,31,34,35,40,41,43,144,45,47,48,140,147)
+			e.cod_empresa IN (17,34,140,144,147)
+			AND e.cod_fornecedor IN (7,9,1,13,16,17)
 			AND e.cod_item = :1`
 
 	rows, err := s.oracleDB.Query(query, cleanSKU)

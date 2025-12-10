@@ -10,6 +10,18 @@ cd "$BASE"
 if [ -d backend/cmd/server ]; then SRC=./backend/cmd/server; else SRC=./backend; fi
 GOCACHE=/d02/.cache/go-build GOMODCACHE=/d02/go/pkg/mod go build -o bin/backend "$SRC"
 
+# Carregar variáveis de ambiente do .env se existir
+if [ -f "$BASE/.env" ]; then
+  echo "📋 Carregando variáveis de ambiente do .env..."
+  set -a
+  source "$BASE/.env"
+  set +a
+  
+  # Configurar Oracle Client
+  export ORACLE_LIB_DIR=${ORACLE_LIB_DIR:-/opt/oracle/instantclient_21_7}
+  export LD_LIBRARY_PATH=${ORACLE_LIB_DIR}:${LD_LIBRARY_PATH:-}
+fi
+
 # Se usa systemd:
 if systemctl list-unit-files | grep -q amz-backend.service; then
   echo "🔁 Backend via systemd"
@@ -18,7 +30,13 @@ if systemctl list-unit-files | grep -q amz-backend.service; then
 else
   echo "▶️  Backend via nohup"
   pkill -f "$BASE/bin/backend" 2>/dev/null || true
-  nohup "$BASE/bin/backend" >> "$LOGS/backend.log" 2>&1 & echo $! > "$LOGS/backend.pid"
+  sleep 2
+  
+  # Iniciar backend com todas as variáveis de ambiente exportadas
+  nohup env $(grep -v '^#' "$BASE/.env" 2>/dev/null | grep -v '^$' | xargs) \
+      ORACLE_LIB_DIR="${ORACLE_LIB_DIR:-/opt/oracle/instantclient_21_7}" \
+      LD_LIBRARY_PATH="${ORACLE_LIB_DIR:-/opt/oracle/instantclient_21_7}:${LD_LIBRARY_PATH:-}" \
+      "$BASE/bin/backend" >> "$LOGS/backend.log" 2>&1 & echo $! > "$LOGS/backend.pid"
 fi
 
 echo "🚀 Frontend: build+start"

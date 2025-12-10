@@ -46,7 +46,7 @@ func New(db *sql.DB, cfg *config.Config, wsHub *websocket.Hub) (*Handlers, error
 	return &Handlers{
 		db:            db,
 		config:        cfg,
-		auth:          services.NewAuthService(db),
+		auth:          services.NewAuthService(db, cfg),
 		carPlate:      services.NewCarPlateService(db, cfg),
 		dePara:        services.NewDeParaService(db, auditService),
 		audit:         auditService,
