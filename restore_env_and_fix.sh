@@ -159,3 +159,6 @@ echo "     - Verifique nginx: sudo systemctl status nginx"
 
 
 
+
+
+

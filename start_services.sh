@@ -138,3 +138,6 @@ echo "📄 Logs:"
 echo "   Backend:  tail -f $LOGS/backend.log"
 echo "   Frontend: tail -f $LOGS/frontend.log"
 
+
+
+

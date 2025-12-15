@@ -168,3 +168,6 @@ cd .. && ./bin/backend  # Usa binário novo!
 
 
 
+
+
+
