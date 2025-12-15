@@ -6,55 +6,92 @@ LOGS="/d02/logs"
 
 echo "🔧 Corrigindo e iniciando serviços..."
 
-# Função para matar processos em uma porta
+# Função para matar processos em uma porta de forma mais agressiva
 kill_port() {
     local port=$1
     echo "🛑 Matando processos na porta $port..."
     
-    # Tentar múltiplos métodos
-    if command -v lsof >/dev/null 2>&1; then
-        lsof -ti:$port 2>/dev/null | xargs kill -9 2>/dev/null || true
-    fi
-    
-    if command -v fuser >/dev/null 2>&1; then
-        fuser -k $port/tcp 2>/dev/null || true
-    fi
+    # Loop para matar múltiplas vezes
+    for i in {1..5}; do
+        # Matar por lsof
+        if command -v lsof >/dev/null 2>&1; then
+            PIDS=$(lsof -ti:$port 2>/dev/null || true)
+            if [ -n "$PIDS" ]; then
+                echo "$PIDS" | xargs kill -9 2>/dev/null || true
+                sleep 1
+            fi
+        fi
+        
+        # Matar por fuser
+        if command -v fuser >/dev/null 2>&1; then
+            fuser -k $port/tcp 2>/dev/null || true
+            sleep 1
+        fi
+        
+        # Verificar se ainda está em uso
+        if command -v lsof >/dev/null 2>&1; then
+            if ! lsof -ti:$port >/dev/null 2>&1; then
+                break  # Porta está livre
+            fi
+        fi
+    done
     
     # Matar por PID dos arquivos
     if [ -f "$LOGS/backend.pid" ] && [ "$port" == "8080" ]; then
         PID=$(cat "$LOGS/backend.pid" 2>/dev/null || echo "")
-        if [ -n "$PID" ] && kill -0 "$PID" 2>/dev/null; then
+        if [ -n "$PID" ]; then
             kill -9 "$PID" 2>/dev/null || true
+            rm -f "$LOGS/backend.pid"
         fi
     fi
     
     if [ -f "$LOGS/frontend.pid" ] && [ "$port" == "3000" ]; then
         PID=$(cat "$LOGS/frontend.pid" 2>/dev/null || echo "")
-        if [ -n "$PID" ] && kill -0 "$PID" 2>/dev/null; then
+        if [ -n "$PID" ]; then
             kill -9 "$PID" 2>/dev/null || true
+            rm -f "$LOGS/frontend.pid"
         fi
     fi
     
-    # Matar por nome de processo
-    pkill -f "$BASE/bin/backend" 2>/dev/null || true
-    pkill -f "next" 2>/dev/null || true
-    pkill -f "node.*next" 2>/dev/null || true
-    pkill -f "node.*3000" 2>/dev/null || true
+    # Matar por nome de processo (mais agressivo)
+    pkill -9 -f "$BASE/bin/backend" 2>/dev/null || true
+    pkill -9 -f "next" 2>/dev/null || true
+    pkill -9 -f "node.*next" 2>/dev/null || true
+    pkill -9 -f "node.*3000" 2>/dev/null || true
+    pkill -9 -f "next-server" 2>/dev/null || true
     
-    sleep 2
+    sleep 3
     
-    # Verificar se ainda está em uso
+    # Verificação final
     if command -v lsof >/dev/null 2>&1; then
-        if lsof -ti:$port >/dev/null 2>&1; then
-            echo "⚠️  Porta $port ainda em uso, tentando novamente..."
+        REMAINING=$(lsof -ti:$port 2>/dev/null || true)
+        if [ -n "$REMAINING" ]; then
+            echo "⚠️  Porta $port ainda em uso após múltiplas tentativas: $REMAINING"
+            echo "   Tentando matar novamente..."
+            echo "$REMAINING" | xargs kill -9 2>/dev/null || true
             sleep 2
-            lsof -ti:$port | xargs kill -9 2>/dev/null || true
-            sleep 2
+        else
+            echo "✅ Porta $port está livre"
         fi
     fi
 }
 
 echo "🛑 Parando processos antigos..."
+
+# Matar tudo primeiro antes de verificar portas
+echo "   Matando todos os processos relacionados..."
+pkill -9 -f "$BASE/bin/backend" 2>/dev/null || true
+pkill -9 -f "next" 2>/dev/null || true
+pkill -9 -f "node.*next" 2>/dev/null || true
+pkill -9 -f "node.*3000" 2>/dev/null || true
+pkill -9 -f "next-server" 2>/dev/null || true
+
+# Limpar PIDs antigos
+rm -f "$LOGS/backend.pid" "$LOGS/frontend.pid"
+
+sleep 2
+
+# Agora matar por porta
 kill_port 8080
 kill_port 3000
 
@@ -152,8 +189,29 @@ sudo chown -R $(whoami):$(whoami) . 2>/dev/null || true
 chmod -R 755 . 2>/dev/null || true
 
 # Build e start do frontend
-echo "   Fazendo build do frontend..."
-npm run build
+echo "   Fazendo build do frontend (pode levar alguns minutos)..."
+echo "   ⚠️  Se travar, você pode verificar o progresso com: tail -f $LOGS/frontend_build.log"
+
+# Fazer build em background com timeout de 15 minutos
+timeout 900 npm run build > "$LOGS/frontend_build.log" 2>&1 || {
+    BUILD_EXIT_CODE=$?
+    if [ $BUILD_EXIT_CODE -eq 124 ]; then
+        echo "❌ Build do frontend excedeu 15 minutos e foi cancelado"
+        echo "   Verifique os logs: tail -f $LOGS/frontend_build.log"
+        exit 1
+    else
+        echo "❌ Build do frontend falhou com código $BUILD_EXIT_CODE"
+        echo "   Verifique os logs: tail -f $LOGS/frontend_build.log"
+        exit 1
+    fi
+}
+
+if [ ! -d "$BASE/.next" ]; then
+    echo "❌ Build não gerou pasta .next, verifique os logs"
+    exit 1
+fi
+
+echo "✅ Build do frontend concluído"
 
 echo "   Iniciando frontend..."
 nohup npm start >> "$LOGS/frontend.log" 2>&1 &
