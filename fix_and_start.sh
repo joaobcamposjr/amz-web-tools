@@ -177,10 +177,52 @@ export NODE_ENV=production
 export NEXT_PUBLIC_API_URL=/api/v1
 export PORT=3000
 
+# Verificar e corrigir fontes do Google antes do build
+LAYOUT_FILE="$BASE/src/app/layout.tsx"
+if grep -q "next/font/google" "$LAYOUT_FILE" 2>/dev/null; then
+    echo "   🔧 Removendo Google Fonts do layout.tsx..."
+    
+    # Backup
+    cp "$LAYOUT_FILE" "${LAYOUT_FILE}.backup.$(date +%Y%m%d_%H%M%S)" 2>/dev/null || true
+    
+    # Remover import do Google Fonts
+    sed -i.tmp '/import { Inter } from .next\/font\/google/d' "$LAYOUT_FILE"
+    sed -i.tmp '/^const inter = Inter({ subsets: .latin. })/d' "$LAYOUT_FILE"
+    sed -i.tmp 's/${inter.className}//g' "$LAYOUT_FILE"
+    sed -i.tmp 's/className={`/className="/g' "$LAYOUT_FILE"
+    sed -i.tmp 's/`} bg-gray-50 antialiased`/" bg-gray-50 antialiased font-sans"/g' "$LAYOUT_FILE"
+    sed -i.tmp 's/className="bg-gray-50 antialiased`/"bg-gray-50 antialiased font-sans"/g' "$LAYOUT_FILE"
+    
+    # Garantir que o body tenha a classe correta
+    if ! grep -q 'className="bg-gray-50 antialiased font-sans"' "$LAYOUT_FILE"; then
+        sed -i.tmp 's/<body className="[^"]*">/<body className="bg-gray-50 antialiased font-sans">/g' "$LAYOUT_FILE"
+    fi
+    
+    rm -f "${LAYOUT_FILE}.tmp"
+    echo "   ✅ Google Fonts removido"
+fi
+
+# Adicionar fontes do sistema no globals.css se necessário
+GLOBALS_FILE="$BASE/src/app/globals.css"
+if [ -f "$GLOBALS_FILE" ] && ! grep -q "font-family:" "$GLOBALS_FILE" 2>/dev/null; then
+    echo "   🔧 Adicionando fontes do sistema no globals.css..."
+    sed -i.tmp '/@apply bg-gray-50 text-gray-900;/a\
+    font-family: -apple-system, BlinkMacSystemFont, '\''Segoe UI'\'', '\''Roboto'\'', '\''Oxygen'\'', '\''Ubuntu'\'', '\''Cantarell'\'', '\''Fira Sans'\'', '\''Droid Sans'\'', '\''Helvetica Neue'\'', sans-serif;\
+    -webkit-font-smoothing: antialiased;\
+    -moz-osx-font-smoothing: grayscale;' "$GLOBALS_FILE"
+    rm -f "${GLOBALS_FILE}.tmp"
+    echo "   ✅ Fontes do sistema adicionadas"
+fi
+
 # Limpar cache
 echo "   Limpando cache Next.js..."
 if [ -d .next ]; then
     sudo rm -rf .next 2>/dev/null || rm -rf .next
+fi
+
+# Limpar também cache do node_modules
+if [ -d node_modules/.cache ]; then
+    rm -rf node_modules/.cache
 fi
 
 # Corrigir permissões
@@ -192,19 +234,43 @@ chmod -R 755 . 2>/dev/null || true
 echo "   Fazendo build do frontend (pode levar alguns minutos)..."
 echo "   ⚠️  Se travar, você pode verificar o progresso com: tail -f $LOGS/frontend_build.log"
 
-# Fazer build em background com timeout de 15 minutos
-timeout 900 npm run build > "$LOGS/frontend_build.log" 2>&1 || {
-    BUILD_EXIT_CODE=$?
-    if [ $BUILD_EXIT_CODE -eq 124 ]; then
-        echo "❌ Build do frontend excedeu 15 minutos e foi cancelado"
-        echo "   Verifique os logs: tail -f $LOGS/frontend_build.log"
-        exit 1
-    else
-        echo "❌ Build do frontend falhou com código $BUILD_EXIT_CODE"
+# Fazer build com timeout de 20 minutos e desabilitar download de fontes
+NEXT_TELEMETRY_DISABLED=1 npm run build > "$LOGS/frontend_build.log" 2>&1 &
+BUILD_PID=$!
+
+# Aguardar com timeout de 20 minutos
+TIMEOUT=1200
+ELAPSED=0
+while kill -0 $BUILD_PID 2>/dev/null; do
+    sleep 5
+    ELAPSED=$((ELAPSED + 5))
+    
+    # A cada minuto, mostrar progresso
+    if [ $((ELAPSED % 60)) -eq 0 ]; then
+        echo "   ⏱️  Build em andamento... ${ELAPSED}s decorridos"
+    fi
+    
+    if [ $ELAPSED -ge $TIMEOUT ]; then
+        echo "   ❌ Build excedeu 20 minutos, cancelando..."
+        kill -9 $BUILD_PID 2>/dev/null || true
+        echo "❌ Build do frontend excedeu 20 minutos e foi cancelado"
         echo "   Verifique os logs: tail -f $LOGS/frontend_build.log"
         exit 1
     fi
-}
+done
+
+# Verificar resultado do build
+wait $BUILD_PID
+BUILD_EXIT_CODE=$?
+
+if [ $BUILD_EXIT_CODE -ne 0 ]; then
+    echo "❌ Build do frontend falhou com código $BUILD_EXIT_CODE"
+    echo "   Verifique os logs: tail -f $LOGS/frontend_build.log"
+    echo ""
+    echo "   Últimas linhas do log:"
+    tail -20 "$LOGS/frontend_build.log"
+    exit 1
+fi
 
 if [ ! -d "$BASE/.next" ]; then
     echo "❌ Build não gerou pasta .next, verifique os logs"
