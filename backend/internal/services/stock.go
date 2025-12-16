@@ -60,12 +60,30 @@ func NewStockService(cfg *config.Config) (*StockService, error) {
 
 	log.Printf("🔧 Oracle connection opened, testing ping...")
 
-	// Test connection with timeout to avoid hanging
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	// Test connection with aggressive timeout using goroutine to ensure it doesn't hang
+	pingDone := make(chan error, 1)
+	var pingErr error
 
-	if err := oracleDB.PingContext(ctx); err != nil {
-		log.Printf("❌ Failed to ping Oracle database (timeout or error): %v", err)
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		pingErr = oracleDB.PingContext(ctx)
+		pingDone <- pingErr
+	}()
+
+	// Wait for ping with timeout
+	select {
+	case err := <-pingDone:
+		if err != nil {
+			log.Printf("❌ Failed to ping Oracle database (timeout or error): %v", err)
+			oracleDB.Close()
+			return &StockService{
+				oracleDB: nil,
+				config:   cfg,
+			}, nil
+		}
+	case <-time.After(6 * time.Second):
+		log.Printf("❌ Oracle ping timeout after 6 seconds, closing connection")
 		oracleDB.Close()
 		return &StockService{
 			oracleDB: nil,
