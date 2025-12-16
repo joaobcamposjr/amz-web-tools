@@ -36,9 +36,15 @@ func main() {
 	// Initialize database
 	db, err := database.Initialize(cfg)
 	if err != nil {
-		log.Fatal("Failed to initialize database:", err)
+		log.Printf("⚠️  Failed to initialize database: %v", err)
+		log.Printf("⚠️  Backend will start but database operations will fail")
+		log.Printf("⚠️  Please check database connectivity and firewall rules")
+		// Continue without database - some routes might fail but server will start
+		db = nil
 	}
-	defer db.Close()
+	if db != nil {
+		defer db.Close()
+	}
 
 	// Initialize Gin router
 	r := gin.Default()
