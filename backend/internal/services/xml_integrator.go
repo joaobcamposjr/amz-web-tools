@@ -2,6 +2,7 @@ package services
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -78,11 +79,27 @@ func NewXMLIntegratorService(cfg *config.Config, wsHub *websocket.Hub) (*XMLInte
 			log.Printf("⚠️ Erro ao conectar Oracle: %v", err)
 			oracleDB = nil
 		} else {
-			if err := oracleDB.Ping(); err != nil {
-				log.Printf("⚠️ Erro ao ping Oracle: %v", err)
+			// Test connection with timeout to avoid hanging
+			pingDone := make(chan error, 1)
+			go func() {
+				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				defer cancel()
+				pingDone <- oracleDB.PingContext(ctx)
+			}()
+
+			select {
+			case err := <-pingDone:
+				if err != nil {
+					log.Printf("⚠️ Erro ao ping Oracle: %v", err)
+					oracleDB.Close()
+					oracleDB = nil
+				} else {
+					log.Println("✅ Conexão Oracle estabelecida")
+				}
+			case <-time.After(6 * time.Second):
+				log.Printf("⚠️ Timeout ao ping Oracle após 6 segundos")
+				oracleDB.Close()
 				oracleDB = nil
-			} else {
-				log.Println("✅ Conexão Oracle estabelecida")
 			}
 		}
 	} else {
@@ -99,11 +116,27 @@ func NewXMLIntegratorService(cfg *config.Config, wsHub *websocket.Hub) (*XMLInte
 			log.Printf("⚠️ Erro ao conectar PostgreSQL: %v", err)
 			pgDB = nil
 		} else {
-			if err := pgDB.Ping(); err != nil {
-				log.Printf("⚠️ Erro ao ping PostgreSQL: %v", err)
+			// Test connection with timeout to avoid hanging
+			pingDone := make(chan error, 1)
+			go func() {
+				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				defer cancel()
+				pingDone <- pgDB.PingContext(ctx)
+			}()
+
+			select {
+			case err := <-pingDone:
+				if err != nil {
+					log.Printf("⚠️ Erro ao ping PostgreSQL: %v", err)
+					pgDB.Close()
+					pgDB = nil
+				} else {
+					log.Println("✅ Conexão PostgreSQL estabelecida")
+				}
+			case <-time.After(6 * time.Second):
+				log.Printf("⚠️ Timeout ao ping PostgreSQL após 6 segundos")
+				pgDB.Close()
 				pgDB = nil
-			} else {
-				log.Println("✅ Conexão PostgreSQL estabelecida")
 			}
 		}
 	} else {
