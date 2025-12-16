@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"time"
 
 	"amz-web-tools/backend/internal/config"
 
@@ -27,9 +28,19 @@ func Initialize(cfg *config.Config) (*sql.DB, error) {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
 
-	// Test connection
-	if err := db.Ping(); err != nil {
-		return nil, fmt.Errorf("failed to ping database: %w", err)
+	// Test connection with retry (3 attempts, 10 seconds each)
+	maxRetries := 3
+	retryDelay := 10 * time.Second
+	for i := 0; i < maxRetries; i++ {
+		if err := db.Ping(); err == nil {
+			break
+		}
+		if i < maxRetries-1 {
+			log.Printf("⚠️  Database ping failed (attempt %d/%d), retrying in %v...", i+1, maxRetries, retryDelay)
+			time.Sleep(retryDelay)
+		} else {
+			return nil, fmt.Errorf("failed to ping database after %d attempts: %w", maxRetries, err)
+		}
 	}
 
 	log.Println("Database connected successfully")
