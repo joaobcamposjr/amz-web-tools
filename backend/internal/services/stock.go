@@ -1,10 +1,12 @@
 package services
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"amz-web-tools/backend/internal/config"
 	"amz-web-tools/backend/internal/models"
@@ -58,9 +60,12 @@ func NewStockService(cfg *config.Config) (*StockService, error) {
 
 	log.Printf("🔧 Oracle connection opened, testing ping...")
 
-	// Test connection
-	if err := oracleDB.Ping(); err != nil {
-		log.Printf("❌ Failed to ping Oracle database: %v", err)
+	// Test connection with timeout to avoid hanging
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := oracleDB.PingContext(ctx); err != nil {
+		log.Printf("❌ Failed to ping Oracle database (timeout or error): %v", err)
 		oracleDB.Close()
 		return &StockService{
 			oracleDB: nil,
